@@ -147,9 +147,10 @@ begin
     for i in 0 to 2**C_AWIDTH-1 loop
       dut_prog_en <= '1';
       dut_prog_addr <= std_logic_vector(to_unsigned(i, dut_prog_addr'length));
-      dut_prog_data <= std_logic_vector(to_unsigned(i+1, dut_prog_data'length));
+      dut_prog_data <= std_logic_vector(to_unsigned(i, dut_prog_data'length));
       wait until rising_edge(clk);
     end loop;
+    dut_prog_done   <= '1';
     dut_prog_en     <= '0';
     din_valid_main  <= '1';
     wait until rising_edge(clk);
