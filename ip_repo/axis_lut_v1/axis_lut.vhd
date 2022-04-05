@@ -54,6 +54,7 @@ architecture rtl of axis_lut is
     signal dout_last_int  : std_logic;
     signal din_accepted   : std_logic;
     signal dout_accepted  : std_logic;
+    signal dout_last_hold : std_logic;
 
     type state_t is (init, use_buffer_wait, use_buffer_go, use_bram_dout, done);
     signal state : state_t;
@@ -80,9 +81,28 @@ begin
     '0' when state = init else
     '1';
 
+  dout_last_int <=
+    '1' when dout_accepted = '1' and dout_last_hold = '1' else
+    '0';
+
   dout_int <=
     bram_dout when state = use_bram_dout else
     bram_buffer;
+
+  p_din_last_hold : process(clk)
+  begin
+    if rising_edge(clk) then
+      if reset = '1' or enable = '0' or prog_done = '0' then
+        dout_last_hold <= '0';
+      else
+        if din_accepted = '1' and din_last = '1' and dout_last_hold = '0' then
+          dout_last_hold <= '1';
+        elsif dout_accepted = '1' and dout_last_int = '1' and dout_last_hold = '1' then
+          dout_last_hold <= '0';
+        end if;
+      end if;
+    end if;
+  end process;
 
   p_state_machine : process(clk)
   begin
