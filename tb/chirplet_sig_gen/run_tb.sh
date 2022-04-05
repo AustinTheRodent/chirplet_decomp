@@ -10,13 +10,13 @@ input_vector_fname=$sim_name"_input.txt"
 
 VLD_COEFF=0.5
 RDY_COEFF=0.5
-RAND_SEED=`date +%s`
-echo RAND_SEED: $RAND_SEED
+rand_seed=`date +%s`
+echo rand_seed: $rand_seed
 
 DEGREE=7
 
-INPUT_FNAME="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
-OUTPUT_FNAME="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/output.txt"
+input_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
+output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/output.txt"
 num_samps=10000
 
 main_arg="none"
@@ -110,28 +110,28 @@ fi
 if [ $main_arg == "all" ] || [ $main_arg == "hw" ] || [ $main_arg == "sw" ] || [ $main_arg == "onlygen" ]; then
   echo generating simulation setup ...
 
-  $script_dir/c_code/bin/txt_to_bin \
-    -i $script_dir/a_taps.txt \
-    -o $script_dir/a_taps.bin \
-    -t float
-
-  $script_dir/c_code/bin/txt_to_bin \
-    -i $script_dir/b_taps.txt \
-    -o $script_dir/b_taps.bin \
-    -t float
+  #$script_dir/c_code/bin/txt_to_bin \
+  #  -i $script_dir/a_taps.txt \
+  #  -o $script_dir/a_taps.bin \
+  #  -t float
+  #
+  #$script_dir/c_code/bin/txt_to_bin \
+  #  -i $script_dir/b_taps.txt \
+  #  -o $script_dir/b_taps.bin \
+  #  -t float
 
   if [ $use_user_input == "false" ];then
     python $TULIP_WIN/fpga_builds/tb/${sim_name}/python/gen_rand_vals.py \
-      -s 16 -n $num_samps -sgn > $INPUT_FNAME
+      -s 8 -n $num_samps > $input_fname
   else
-    cp $usr_file_name $INPUT_FNAME
-    num_samps=`wc -l < $INPUT_FNAME`
+    cp $usr_file_name $input_fname
+    num_samps=`wc -l < $input_fname`
   fi
 
-  $script_dir/c_code/bin/txt_to_bin \
-    -i $INPUT_FNAME \
-    -o ${INPUT_FNAME%txt*}bin \
-    -t float
+  #$script_dir/c_code/bin/txt_to_bin \
+  #  -i $input_fname \
+  #  -o ${input_fname%txt*}bin \
+  #  -t float
 
   if [ $main_arg == "onlygen" ]; then
     exit
@@ -145,11 +145,13 @@ fi
 if [ $main_arg == "all" ] || [ $main_arg == "sw" ];then
   echo generating SW model ...
 
-  $script_dir/c_code/bin/filter.exe \
-    -a $script_dir/a_taps.txt \
-    -b $script_dir/b_taps.txt \
-    -i $script_dir/input.txt \
-    -o $script_dir/sw_output/output.txt
+  cp $input_fname $script_dir/sw_output/output.txt
+
+  #$script_dir/c_code/bin/filter.exe \
+  #  -a $script_dir/a_taps.txt \
+  #  -b $script_dir/b_taps.txt \
+  #  -i $script_dir/input.txt \
+  #  -o $script_dir/sw_output/output.txt
 
 fi
 
@@ -163,7 +165,9 @@ if [ $main_arg == "all" ] || [ $main_arg == "hw" ] || [ $main_arg == "compile" ]
   export generics_list="\
 -g/tb_${sim_name}/G_VLD_COEFF=$VLD_COEFF \
 -g/tb_${sim_name}/G_RDY_COEFF=$RDY_COEFF \
--g/tb_${sim_name}/G_RAND_SEED=$RAND_SEED \
+-g/tb_${sim_name}/G_RAND_SEED=$rand_seed \
+-g/tb_${sim_name}/G_INPUT_FNAME=$input_fname \
+-g/tb_${sim_name}/G_OUTPUT_FNAME=$output_fname \
 "
 
   cd $TULIP_WIN/fpga_builds/tb/${sim_name}/cfg/
@@ -189,10 +193,10 @@ if [ $main_arg == "all" ] || [ $main_arg == "hw" ] || [ $main_arg == "compile" ]
 
   rm $TULIP_WIN/fpga_builds/tb/${sim_name}/cfg/sim_tmp.do
 
-  $script_dir/c_code/bin/bin_to_txt \
-    -i ${OUTPUT_FNAME%txt*}bin \
-    -o $OUTPUT_FNAME \
-    -t float
+  #$script_dir/c_code/bin/bin_to_txt \
+  #  -i ${output_fname%txt*}bin \
+  #  -o $output_fname \
+  #  -t float
 
 fi
 
@@ -200,12 +204,14 @@ fi
 ## compare SW and HW outputs:
 ##################################################################
 if [ $main_arg != "hw" ] && [ $main_arg != "sw" ] && [ $main_arg != "compile" ];then
-    echo comparing outputs ...
+  echo comparing outputs ...
 
-    $script_dir/c_code/bin/calc_evm \
-      -f1 $script_dir/hw_output/output.txt \
-      -f2 $script_dir/sw_output/output.txt \
-      -s 16
+  cmp $script_dir/sw_output/output.txt $script_dir/hw_output/output.txt
+
+  #$script_dir/c_code/bin/calc_evm \
+  #  -f1 $script_dir/hw_output/output.txt \
+  #  -f2 $script_dir/sw_output/output.txt \
+  #  -s 16
 
 fi
 

@@ -12,10 +12,9 @@ entity tb_chirplet_sig_gen is
   (
     G_VLD_COEFF         : real                  := 0.5;
     G_RDY_COEFF         : real                  := 0.5;
-    G_RAND_SEED         : integer               := 0
---    G_RAND_SEED         : integer               := 0;
---    G_INPUT_FNAME       : string                := "";
---    G_OUTPUT_FNAME      : string                := "";
+    G_RAND_SEED         : integer               := 0;
+    G_INPUT_FNAME       : string                := "";
+    G_OUTPUT_FNAME      : string                := ""
 --    G_NUM_SAMPS         : integer               := 0
   );
 end entity;
@@ -45,6 +44,97 @@ architecture behavioral of tb_chirplet_sig_gen is
       return integer(input+0.5);
     end if;
   end function;
+
+  procedure log_axi_stream
+  (
+    file_name         : in  string;
+    num_samps         : in  integer;
+    is_signed         : in  integer;
+    signal clk        : in  std_logic;
+    signal din        : in  std_logic_vector;
+    signal din_valid  : in  std_logic;
+    signal din_ready  : in  std_logic;
+    signal din_last   : in  std_logic
+  ) is
+    file file_ptr       : text;
+    variable v_oline    : line;
+    variable v_counter  : integer;
+  begin
+    file_open(file_ptr, file_name, write_mode);
+    v_counter := 0;
+
+    while 1 = 1 loop
+      wait until rising_edge(clk);
+      if din_valid = '1' and din_ready = '1' then
+        if is_signed = 1 then
+          write(v_oline, to_integer(signed(din)));
+        else
+          write(v_oline, to_integer(unsigned(din)));
+        end if;
+        writeline(file_ptr, v_oline);
+        if num_samps = 0 then
+          if din_last = '1' then
+            exit;
+          end if;
+        elsif v_counter = num_samps-1 then
+          exit;
+        end if;
+        v_counter := v_counter + 1;
+      end if;
+    end loop;
+
+    file_close(file_ptr);
+
+  end procedure;
+
+  procedure generate_axi_stream
+  (
+    file_name               : in  string;
+    signal clk              : in  std_logic;
+    signal dout             : out integer;
+    signal dout_valid_main  : out std_logic;
+    signal dout_valid       : in  std_logic;
+    signal dout_ready       : in  std_logic;
+    signal dout_last        : out std_logic
+  ) is
+    file file_ptr         : text;
+    variable v_iline      : line;
+    variable v_flen       : integer;
+    variable v_dout       : integer;
+    variable v_line_count : integer;
+  begin
+    file_open(file_ptr, file_name, read_mode);
+    v_flen          := get_flen(file_name);
+    dout_valid_main <= '0';
+    dout_last       <= '0';
+    v_line_count    := 1;
+    readline(file_ptr, v_iline);
+    read(v_iline, v_dout);
+    dout <= v_dout;
+    wait until rising_edge(clk);
+    dout_valid_main <= '1';
+
+    while v_line_count <= v_flen loop
+      wait until rising_edge(clk);
+      if dout_valid = '1' and dout_ready = '1' then
+        if v_line_count < v_flen then
+          readline(file_ptr, v_iline);
+          read(v_iline, v_dout);
+        end if;
+        dout <= v_dout;
+        if v_line_count = v_flen-1 then
+          dout_last <= '1';
+        end if;
+        v_line_count := v_line_count + 1;
+      end if;
+    end loop;
+
+    file_close(file_ptr);
+    wait until rising_edge(clk);
+    dout_valid_main <= '0';
+    dout_last       <= '0';
+
+  end procedure;
 
   component axis_lut is
     generic
@@ -91,6 +181,7 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal dut_prog_done    : std_logic;
 
   signal dut_din          : std_logic_vector(C_AWIDTH-1 downto 0);
+  signal dut_din_integer  : integer;
   signal dut_din_valid    : std_logic;
   signal dut_din_ready    : std_logic;
   signal dut_din_last     : std_logic;
@@ -102,18 +193,6 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal din_valid_main   : std_logic;
   signal din_valid_rand   : std_logic;
   signal dout_ready_rand  : std_logic;
-
-  --signal a_tap_wr         : std_logic;
-  --signal a_tap_val        : std_logic_vector(31 downto 0);
-  --signal b_tap_wr         : std_logic;
-  --signal b_tap_val        : std_logic_vector(31 downto 0);
-  --
-  --file taps_fptr          : text;
-  --file input_fptr         : text;
-  --file output_fptr        : text;
-  --
-  --type file_capture_t is (open_file, capture, done);
-  --signal file_capture : file_capture_t := open_file;
 
 begin
 
@@ -130,6 +209,8 @@ begin
     -- reset signals to defaults:
     dut_reset       <= '1';
     dut_enable      <= '0';
+    dut_din_integer <= 0;
+    dut_din_last    <= '0';
     din_valid_main  <= '0';
 
     dut_prog_data   <= (others => '0');
@@ -152,53 +233,22 @@ begin
     end loop;
     dut_prog_done   <= '1';
     dut_prog_en     <= '0';
-    din_valid_main  <= '1';
-    wait until rising_edge(clk);
+
+    generate_axi_stream
+    (
+      G_INPUT_FNAME,
+      clk,
+      dut_din_integer,
+      din_valid_main,
+      dut_din_valid,
+      dut_din_ready,
+      dut_din_last
+    );
+
 
     wait;
 
   end process;
-
-  --p_capture_output : process(clk)
-  --
-  --  variable v_char_buffer  : character;
-  --  type char_file_t is file of character;
-  --  file char_file          : char_file_t;
-  --
-  --  variable v_line         : line;
-  --  variable v_countdown    : integer;
-  --begin
-  --  if rising_edge(clk) then
-  --    case file_capture is
-  --      when open_file =>
-  --        v_countdown := 0;
-  --        file_open(char_file, G_OUTPUT_FNAME(G_OUTPUT_FNAME'left to G_OUTPUT_FNAME'right-3) & "bin", write_mode);
-  --        file_capture <= capture;
-  --
-  --      when capture =>
-  --        if dut_dout_valid = '1' and dut_dout_ready = '1' then
-  --          for i in 0 to 3 loop
-  --            v_char_buffer := character'val(to_integer(unsigned(dut_dout(i*8+7 downto i*8))));
-  --            write(char_file, v_char_buffer);
-  --          end loop;
-  --          if dut_dout_last = '1' then
-  --            file_close(char_file);
-  --            file_capture <= done;
-  --          end if;
-  --        end if;
-  --
-  --      when done =>
-  --        v_countdown := v_countdown + 1;
-  --        if v_countdown = 200 then
-  --          report "simulation finished";
-  --          finish;
-  --        end if;
-  --        file_capture <= done;
-  --
-  --      when others =>
-  --    end case;
-  --  end if;
-  --end process;
 
   p_rand_valid : process (clk)
     variable seed1  : positive := 100; -- seed values for random generator
@@ -230,6 +280,23 @@ begin
     end if;
   end process;
 
+  p_log_output : process
+  begin
+    log_axi_stream
+    (
+      G_OUTPUT_FNAME,
+      0,
+      0,
+      clk,
+      dut_dout,
+      dut_dout_valid,
+      dut_dout_ready,
+      dut_dout_last
+    );
+    wait for C_CLK_PERIOD*10;
+    report "simulation finished" severity failure;
+  end process;
+
   p_input_output_counter : process(clk)
   begin
     if rising_edge(clk) then
@@ -240,7 +307,7 @@ begin
         if dut_din_valid = '1' and dut_din_ready = '1' then
           input_counter <= input_counter + 1;
         end if;
-  
+
         if dut_dout_valid = '1' and dut_dout_ready = '1' then
           output_counter <= output_counter + 1;
         end if;
@@ -251,18 +318,25 @@ begin
   dut_din_valid   <= din_valid_main and din_valid_rand;
   dut_dout_ready  <= dout_ready_rand;
 
-  p_din_counter : process(clk)
-  begin
-    if rising_edge(clk) then
-      if dut_reset = '1' or dut_enable = '0' then
-        dut_din <= (others => '0');
-      else
-        if dut_din_valid = '1' and dut_din_ready = '1' then
-          dut_din <= std_logic_vector(unsigned(dut_din) + 1);
-        end if;
-      end if;
-    end if;
-  end process;
+  dut_din         <= std_logic_vector(to_unsigned(dut_din_integer, dut_din'length));
+
+  --p_din_counter : process(clk)
+  --begin
+  --  if rising_edge(clk) then
+  --    if dut_reset = '1' or dut_enable = '0' then
+  --      dut_din <= (others => '0');
+  --    else
+  --      if dut_din_valid = '1' and dut_din_ready = '1' then
+  --        dut_din <= std_logic_vector(unsigned(dut_din) + 1);
+  --        if dut_din = x"FE" then
+  --          dut_din_last <= '1';
+  --        else
+  --          dut_din_last <= '0';
+  --        end if;
+  --      end if;
+  --    end if;
+  --  end if;
+  --end process;
 
   u_dut : axis_lut
     generic map
@@ -284,12 +358,12 @@ begin
       din         => dut_din,
       din_valid   => dut_din_valid,
       din_ready   => dut_din_ready,
-      din_last    => '0',
+      din_last    => dut_din_last,
 
       dout        => dut_dout,
       dout_valid  => dut_dout_valid,
       dout_ready  => dut_dout_ready,
-      dout_last   => open
+      dout_last   => dut_dout_last
     );
 
 end behavioral;
