@@ -15,7 +15,6 @@ entity tb_chirplet_sig_gen is
     G_RAND_SEED         : integer               := 0;
     G_INPUT_FNAME       : string                := "";
     G_OUTPUT_FNAME      : string                := ""
---    G_NUM_SAMPS         : integer               := 0
   );
 end entity;
 
@@ -139,28 +138,30 @@ architecture behavioral of tb_chirplet_sig_gen is
   component axis_lut is
     generic
     (
-      G_AWIDTH    : integer range 1 to 24 := 16;
-      G_DWIDTH    : integer range 1 to 64 := 16
+    G_AWIDTH        : integer range 1 to 24 := 16;
+    G_DWIDTH        : integer range 1 to 64 := 16;
+    G_BUFFER_INPUT  : boolean := false;
+    G_BUFFER_OUTPUT : boolean := false
     );
     port
     (
-      clk         : in std_logic;
-      reset       : in std_logic;
-      enable      : in std_logic;
+      clk           : in std_logic;
+      reset         : in std_logic;
+      enable        : in std_logic;
 
-      prog_data   : in  std_logic_vector(G_DWIDTH-1 downto 0);
-      prog_addr   : in  std_logic_vector(G_AWIDTH-1 downto 0);
-      prog_en     : in  std_logic;
-      prog_done   : in  std_logic;
+      prog_data     : in  std_logic_vector(G_DWIDTH-1 downto 0);
+      prog_addr     : in  std_logic_vector(G_AWIDTH-1 downto 0);
+      prog_en       : in  std_logic;
+      prog_done     : in  std_logic;
 
-      din         : in  std_logic_vector(G_AWIDTH-1 downto 0);
-      din_valid   : in  std_logic;
-      din_ready   : out std_logic;
-      din_last    : in  std_logic;
-      dout        : out std_logic_vector(G_DWIDTH-1 downto 0);
-      dout_valid  : out std_logic;
-      dout_ready  : in  std_logic;
-      dout_last   : out std_logic
+      din           : in  std_logic_vector(G_AWIDTH-1 downto 0);
+      din_valid     : in  std_logic;
+      din_ready     : out std_logic;
+      din_last      : in  std_logic;
+      dout          : out std_logic_vector(G_DWIDTH-1 downto 0);
+      dout_valid    : out std_logic;
+      dout_ready    : in  std_logic;
+      dout_last     : out std_logic
     );
   end component;
 
@@ -181,7 +182,7 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal dut_prog_done    : std_logic;
 
   signal dut_din          : std_logic_vector(C_AWIDTH-1 downto 0);
-  signal dut_din_integer  : integer;
+  signal dut_din_integer  : integer := 0;
   signal dut_din_valid    : std_logic;
   signal dut_din_ready    : std_logic;
   signal dut_din_last     : std_logic;
@@ -244,7 +245,6 @@ begin
       dut_din_ready,
       dut_din_last
     );
-
 
     wait;
 
@@ -320,29 +320,13 @@ begin
 
   dut_din         <= std_logic_vector(to_unsigned(dut_din_integer, dut_din'length));
 
-  --p_din_counter : process(clk)
-  --begin
-  --  if rising_edge(clk) then
-  --    if dut_reset = '1' or dut_enable = '0' then
-  --      dut_din <= (others => '0');
-  --    else
-  --      if dut_din_valid = '1' and dut_din_ready = '1' then
-  --        dut_din <= std_logic_vector(unsigned(dut_din) + 1);
-  --        if dut_din = x"FE" then
-  --          dut_din_last <= '1';
-  --        else
-  --          dut_din_last <= '0';
-  --        end if;
-  --      end if;
-  --    end if;
-  --  end if;
-  --end process;
-
   u_dut : axis_lut
     generic map
     (
-      G_AWIDTH    => C_AWIDTH,
-      G_DWIDTH    => C_DWIDTH
+      G_AWIDTH        => C_AWIDTH,
+      G_DWIDTH        => C_DWIDTH,
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
