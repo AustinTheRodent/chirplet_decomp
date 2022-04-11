@@ -70,6 +70,8 @@ architecture rtl of float_to_fixed is
   constant C_EXP_LEN                : integer := 8; -- [bits]
   constant C_MANT_LEN               : integer := 23; -- [bits], without implied 1
 
+  constant C_MAX_INT_SIGNED         : std_logic_vector(check_if_zero(G_INTEGER_BITS)-2 downto 0) := (others => '0');
+
   signal din_ready_int              : std_logic;
   signal dout_int                   : std_logic_vector(G_INTEGER_BITS+G_FRACT_BITS-1 downto 0);
   signal dout_valid_int             : std_logic;
@@ -105,8 +107,8 @@ architecture rtl of float_to_fixed is
   signal output_fract               : std_logic_vector(check_if_zero(G_FRACT_BITS)+C_MANT_LEN downto 0);
   signal output_fract_short         : std_logic_vector(check_if_zero(G_FRACT_BITS)-1 downto 0);
 
-  signal output_comb                : std_logic_vector(check_if_zero(G_INTEGER_BITS)+check_if_zero(G_FRACT_BITS)-1 downto 0);
-  signal output_sign                : std_logic_vector(check_if_zero(G_INTEGER_BITS)+check_if_zero(G_FRACT_BITS)-1 downto 0);
+  signal output_comb                : std_logic_vector((G_INTEGER_BITS)+(G_FRACT_BITS)-1 downto 0);
+  signal output_sign                : std_logic_vector((G_INTEGER_BITS)+(G_FRACT_BITS)-1 downto 0);
 
 begin
 
@@ -162,7 +164,7 @@ begin
 
   output_integer_short <=
     (others => '1') when shift_amount > check_if_zero(G_INTEGER_BITS)-1 and G_SIGNED_OUTPUT = false else
-    (others => '1') when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and G_SIGNED_OUTPUT = true else
+    '1' & C_MAX_INT_SIGNED when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and G_SIGNED_OUTPUT = true else
     output_integer_long_shift(check_if_zero(G_INTEGER_BITS)+C_MANT_LEN-1 downto C_MANT_LEN);
 
   output_pre_shift_fract(check_if_zero(G_FRACT_BITS)+C_MANT_LEN) <= '1';
@@ -171,13 +173,16 @@ begin
 
   output_fract <=
     (others => '1') when shift_amount > check_if_zero(G_INTEGER_BITS)-1 and G_SIGNED_OUTPUT = false else
-    (others => '1') when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and G_SIGNED_OUTPUT = true else
+    (others => '0') when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and G_SIGNED_OUTPUT = true else
     std_logic_vector(shift_left(unsigned(output_pre_shift_fract), shift_amount)) when shift_amount >= 0 else
     std_logic_vector(shift_right(unsigned(output_pre_shift_fract), -shift_amount));
 
   output_fract_short <= output_fract(check_if_zero(G_FRACT_BITS)+C_MANT_LEN-1 downto C_MANT_LEN);  
 
-  output_comb <= output_integer_short & output_fract_short;
+  output_comb <=
+    output_integer_short when G_FRACT_BITS = 0 else
+    output_fract_short when G_INTEGER_BITS = 0 else
+    output_integer_short & output_fract_short;
 
   gen_signed_output : if G_SIGNED_OUTPUT = true generate
     output_sign <=
@@ -189,10 +194,7 @@ begin
     output_sign <= output_comb;
   end generate;
 
-  output_buff_din <=
-    output_sign(output_sign'left downto 1) when G_FRACT_BITS = 0 else
-    output_sign(output_sign'left-1 downto 0) when G_INTEGER_BITS = 0 else
-    output_sign;
+  output_buff_din <= output_sign;
 
   output_buff_din_valid <= input_buff_dout_valid;
   input_buff_dout_ready <= output_buff_din_ready;
