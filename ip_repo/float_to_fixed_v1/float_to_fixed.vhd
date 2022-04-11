@@ -70,7 +70,8 @@ architecture rtl of float_to_fixed is
   constant C_EXP_LEN                : integer := 8; -- [bits]
   constant C_MANT_LEN               : integer := 23; -- [bits], without implied 1
 
-  constant C_MAX_INT_SIGNED         : std_logic_vector(check_if_zero(G_INTEGER_BITS)-2 downto 0) := (others => '0');
+  constant C_MIN_INT_SIGNED         : std_logic_vector(check_if_zero(G_INTEGER_BITS)-2 downto 0) := (others => '0');
+  constant C_MAX_INT_SIGNED         : std_logic_vector(check_if_zero(G_INTEGER_BITS)-2 downto 0) := (others => '1');
 
   signal din_ready_int              : std_logic;
   signal dout_int                   : std_logic_vector(G_INTEGER_BITS+G_FRACT_BITS-1 downto 0);
@@ -164,7 +165,8 @@ begin
 
   output_integer_short <=
     (others => '1') when shift_amount > check_if_zero(G_INTEGER_BITS)-1 and G_SIGNED_OUTPUT = false else
-    '1' & C_MAX_INT_SIGNED when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and G_SIGNED_OUTPUT = true else
+    '0' & C_MAX_INT_SIGNED when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and input_buff_dout(31) = '0' and G_SIGNED_OUTPUT = true else
+    '1' & C_MIN_INT_SIGNED when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and input_buff_dout(31) = '1' and G_SIGNED_OUTPUT = true else
     output_integer_long_shift(check_if_zero(G_INTEGER_BITS)+C_MANT_LEN-1 downto C_MANT_LEN);
 
   output_pre_shift_fract(check_if_zero(G_FRACT_BITS)+C_MANT_LEN) <= '1';
@@ -173,7 +175,8 @@ begin
 
   output_fract <=
     (others => '1') when shift_amount > check_if_zero(G_INTEGER_BITS)-1 and G_SIGNED_OUTPUT = false else
-    (others => '0') when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and G_SIGNED_OUTPUT = true else
+    (others => '1') when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and input_buff_dout(31) = '0' and G_SIGNED_OUTPUT = true else
+    (others => '0') when shift_amount > check_if_zero(G_INTEGER_BITS)-2 and input_buff_dout(31) = '1' and G_SIGNED_OUTPUT = true else
     std_logic_vector(shift_left(unsigned(output_pre_shift_fract), shift_amount)) when shift_amount >= 0 else
     std_logic_vector(shift_right(unsigned(output_pre_shift_fract), -shift_amount));
 
