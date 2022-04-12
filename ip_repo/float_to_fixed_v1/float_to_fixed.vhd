@@ -3,8 +3,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
---todo: add generics to buffer input/output
-
 entity float_to_fixed is
   generic
   (
@@ -97,7 +95,7 @@ architecture rtl of float_to_fixed is
   signal output_buff_dout_last      : std_logic;
 
   signal exponent                   : std_logic_vector(C_EXP_LEN-1 downto 0);
-  signal shift_amount               : integer range -C_EXP_BIAS-1 to C_EXP_BIAS;
+  signal shift_amount               : integer range -C_EXP_BIAS-1 to C_EXP_BIAS+1;
   signal mantissa                   : std_logic_vector(C_MANT_LEN-1 downto 0);
 
   signal output_integer_long        : std_logic_vector(check_if_zero(G_INTEGER_BITS)+C_MANT_LEN-1 downto 0);
