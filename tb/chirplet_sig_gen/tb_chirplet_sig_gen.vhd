@@ -8,7 +8,6 @@ use ieee.std_logic_textio.all;
 use std.env.finish;
 
 -- todo:
-  --tb feed axis stream still sucks
   --binary read/write file io
   --eval exponential LUT
 
@@ -91,6 +90,48 @@ architecture behavioral of tb_chirplet_sig_gen is
 
   end procedure;
 
+  procedure log_bin_axi_stream
+  (
+    file_name         : in  string;
+    num_samps         : in  integer;
+    bytes_per_samp    : in  integer;
+    signal clk        : in  std_logic;
+    signal din        : in  std_logic_vector;
+    signal din_valid  : in  std_logic;
+    signal din_ready  : in  std_logic;
+    signal din_last   : in  std_logic
+  ) is
+    variable v_counter      : integer;
+    variable v_char_buffer  : character;
+    type char_file_t is file of character;
+    file file_ptr           : char_file_t;
+
+  begin
+    file_open(file_ptr, file_name, write_mode);
+    v_counter := 0;
+
+    while 1 = 1 loop
+      wait until rising_edge(clk);
+      if din_valid = '1' and din_ready = '1' then
+        for i in 0 to bytes_per_samp-1 loop
+          v_char_buffer := character'val(to_integer(unsigned(din(i*8+7 downto i*8))));
+          write(file_ptr, v_char_buffer);
+        end loop;
+        if num_samps = 0 then
+          if din_last = '1' then
+            exit;
+          end if;
+        elsif v_counter = num_samps-1 then
+          exit;
+        end if;
+        v_counter := v_counter + 1;
+      end if;
+    end loop;
+
+    file_close(file_ptr);
+
+  end procedure;
+
   procedure generate_axi_stream
   (
     file_name               : in  string;
@@ -126,6 +167,65 @@ architecture behavioral of tb_chirplet_sig_gen is
           read(v_iline, v_dout);
         end if;
         dout <= v_dout;
+        if v_line_count = v_flen-1 then
+          dout_last <= '1';
+        end if;
+        v_line_count := v_line_count + 1;
+      end if;
+    end loop;
+
+    file_close(file_ptr);
+    dout_valid_main <= '0';
+    dout_last       <= '0';
+    wait until rising_edge(clk);
+    dout_valid_main <= '0';
+    dout_last       <= '0';
+
+  end procedure;
+
+  procedure generate_bin_axi_stream
+  (
+    file_name               : in  string;
+    bytes_per_samp          : in  integer;
+    file_len                : in  integer;
+    signal clk              : in  std_logic;
+    signal dout             : out std_logic_vector;
+    signal dout_valid_main  : out std_logic;
+    signal dout_valid       : in  std_logic;
+    signal dout_ready       : in  std_logic;
+    signal dout_last        : out std_logic
+  ) is
+    variable v_flen         : integer;
+    variable v_line_count   : integer;
+
+    variable v_char_buffer  : character;
+    type char_file_t is file of character;
+    file file_ptr           : char_file_t;
+  begin
+
+    file_open(file_ptr, file_name, read_mode);
+    v_flen          := file_len;
+    dout_valid_main <= '0';
+    dout_last       <= '0';
+    v_line_count    := 1;
+
+    for i in 0 to bytes_per_samp-1 loop
+      read(file_ptr, v_char_buffer);
+      dout(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    wait until rising_edge(clk);
+    dout_valid_main <= '1';
+
+    while v_line_count <= v_flen loop
+      wait until rising_edge(clk);
+      if dout_valid = '1' and dout_ready = '1' then
+        if v_line_count < v_flen then
+          for i in 0 to bytes_per_samp-1 loop
+            read(file_ptr, v_char_buffer);
+            dout(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+          end loop;
+        end if;
         if v_line_count = v_flen-1 then
           dout_last <= '1';
         end if;
@@ -283,17 +383,30 @@ begin
 
   p_log_output : process
   begin
-    log_axi_stream
+    --log_axi_stream
+    --(
+    --  G_OUTPUT_FNAME,
+    --  0,
+    --  0,
+    --  clk,
+    --  dut_dout,
+    --  dut_dout_valid,
+    --  dut_dout_ready,
+    --  dut_dout_last
+    --);
+
+    log_bin_axi_stream
     (
       G_OUTPUT_FNAME,
       0,
-      0,
+      4,
       clk,
       dut_dout,
       dut_dout_valid,
       dut_dout_ready,
       dut_dout_last
     );
+  
     wait for C_CLK_PERIOD*10;
     report "simulation finished" severity failure;
   end process;
