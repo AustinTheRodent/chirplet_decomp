@@ -13,10 +13,8 @@ RDY_COEFF=0.5
 rand_seed=`date +%s`
 echo rand_seed: $rand_seed
 
-DEGREE=7
-
 input_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
-output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/output.txt"
+output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/output.bin"
 num_samps=10000
 
 main_arg="none"
