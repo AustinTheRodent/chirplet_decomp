@@ -181,12 +181,12 @@ begin
       enable      => enable,
   
       din1        => negative_tau;
-      din2        => 
+      din2        => time_next
       din_valid   => t_minus_tau_din_valid,
       din_ready   => t_minus_tau_din_ready,
       din_last    => '0',
   
-      dout        => time_next,
+      dout        => t_minus_tau,
       dout_valid  => t_minus_tau_dout_valid,
       dout_ready  => t_minus_tau_dout_ready,
       dout_last   => open
