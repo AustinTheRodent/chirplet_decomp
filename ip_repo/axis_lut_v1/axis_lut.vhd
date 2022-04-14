@@ -2,8 +2,6 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
---todo: add generics to buffer input/output
-
 entity axis_lut is
   generic
   (
@@ -104,7 +102,7 @@ architecture rtl of axis_lut is
   signal output_buff_dout_ready : std_logic;
   signal output_buff_dout_last  : std_logic;
 
-  type state_t is (init, use_buffer_wait, use_buffer_go, use_bram_dout);
+  type state_t is (init, use_buffer, use_bram_dout);
   signal state : state_t;
 
   signal bram_buffer            : std_logic_vector(G_DWIDTH-1 downto 0);
@@ -163,7 +161,7 @@ begin
     '0' when prog_done = '0' else
     '1' when state = init else
     '1' when state = use_bram_dout and output_buff_din_ready = '1' else
-    '1' when (state = use_buffer_wait or state = use_buffer_go) and output_buff_din_ready = '1' else
+    '1' when state = use_buffer and output_buff_din_ready = '1' else
     '0';
 
   output_buff_din_valid <=
@@ -206,24 +204,13 @@ begin
               state <= use_bram_dout;
             end if;
           when use_bram_dout =>
-            if din_accepted = '0' and dout_accepted = '0' then
+            if dout_accepted = '0' then
               bram_buffer <= bram_dout;
-              state       <= use_buffer_wait;
-            elsif din_accepted = '1' and dout_accepted = '0' then
-              bram_buffer <= bram_dout;
-              state       <= use_buffer_go;
+              state       <= use_buffer;
             elsif din_accepted = '0' and dout_accepted = '1' then
               state       <= init;
             end if;
-          when use_buffer_wait =>
-            if din_accepted = '0' and dout_accepted = '1' then
-              state <= init;
-            elsif din_accepted = '1' and dout_accepted = '1' then
-              state <= use_bram_dout;
-            elsif din_accepted = '1' and dout_accepted = '0' then
-              state <= use_buffer_go;
-            end if;
-          when use_buffer_go =>
+          when use_buffer =>
             if din_accepted = '0' and dout_accepted = '1' then
               state <= init;
             elsif din_accepted = '1' and dout_accepted = '1' then
