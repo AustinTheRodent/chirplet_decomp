@@ -27,7 +27,7 @@ entity xcorr is
     Port (clk,signalvalid,chirpvalid: in STD_LOGIC;
     inputchirp: in std_logic_vector(0 to 1023);
     inputsignal: in std_logic_vector(0 to 1023);
-    outclk: out STD_LOGIC;
+    outvalid: out STD_LOGIC;
     output: out unsigned(0 to 47));
 end xcorr;
 
@@ -80,12 +80,12 @@ begin
       end loop;
       finaladditionstate<=finaladditionstate+1;
     elsif state=1564 and finaladditionstate/=6 then
-      if outclk='1' then
-        outclk<='0';
+      if outvalid='1' then
+        outvalid<='0';
         state<=0;
         finaladditionstate<=0;
       else
-        outclk<='1';
+        outvalid<='1';
         output<=partialsum(0);
       end if;
     end if;
