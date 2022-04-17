@@ -14,7 +14,7 @@ def main():
 
   if is_signed == False:
     for i in range(num_samples):
-      print("%i\n" % random.randrange(0,2**sym_len,1))
+      print("%i" % random.randrange(0,2**sym_len,1))
   else:
     for i in range(num_samples):
       print("%i" % random.randrange(-2**(sym_len-1),2**(sym_len-1),1))

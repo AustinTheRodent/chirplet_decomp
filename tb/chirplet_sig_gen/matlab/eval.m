@@ -1,32 +1,31 @@
-pkg load signal;
+clear all;
 
-fin = fopen("hw_out.txt", "r");
-din1 = fscanf(fin, "%f\n");
-fclose(fin);
+fid = fopen("../hw_output/output.bin", "rb");
+data = fread(fid, "float");
+fclose(fid);
 
-fin = fopen("sw_out.txt", "r");
-din2 = fscanf(fin, "%f\n");
-fclose(fin);
+time_step=0.00000001
+tau=0.0005
+alpha1=20000000
+
+%data = zeros(100000, 1);
+sw_data = zeros(length(data), 1);
+err = zeros(length(data), 1);
+for count=0:length(data)-1
+  sw_data(count+1) = exp(-alpha1*(-tau + (count)*time_step)^2);
+  time = time + time_step;
+  err(count+1) = 100*(sw_data(count+1)-data(count+1))/sw_data(count+1);
+  if err(count+1) > 100
+    err(count+1) = 100;
+  elseif err(count+1) < -100
+    err(count+1) = -100;
+  end
+end
 
 figure(1); hold on;
-plot(din1)
-plot(din2)
+plot(data);
+plot(sw_data);
 
-%figure(2);
-%omega = -pi:2*pi/length(din):pi-2*pi/length(din);
-%plot(omega/pi, 20*log10(abs(fftshift(fft(din)))))
 
-return;
-[b, a] = cheby1(4, 1, 0.1);
-b'
-a'
-x = zeros(4096, 1);
-x(1) = 1;
-y = filter(b, a, x);
-omega = -pi:2*pi/length(y):pi-2*pi/length(y);
-
-figure(3);
-plot(y)
-
-figure(4);
-plot(omega/pi, 20*log10(abs(fftshift(fft(y)))))
+figure(2);
+plot(err)

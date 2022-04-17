@@ -266,6 +266,27 @@ architecture behavioral of tb_chirplet_sig_gen is
     );
   end component;
 
+  component chirplet_gen is
+    port
+    (
+      clk             : in std_logic;
+      reset           : in std_logic;
+      enable          : in std_logic;
+
+      din_tau         : in  std_logic_vector(31 downto 0); -- floating point
+      din_t_step      : in  std_logic_vector(31 downto 0); -- floating point
+      din_alpha1      : in  std_logic_vector(31 downto 0); -- floating point
+      din_valid       : in  std_logic;
+      din_ready       : out std_logic;
+      din_last        : in  std_logic;
+
+      dout            : out std_logic_vector(31 downto 0);
+      dout_valid      : out std_logic;
+      dout_ready      : in  std_logic;
+      dout_last       : out std_logic
+    );
+  end component;
+
   constant C_CLK_PERIOD   : time    := 20 ns; -- 50MHz
   constant C_DWIDTH       : integer := 32;
   constant C_AWIDTH       : integer := 16;
@@ -277,10 +298,9 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal input_counter    : unsigned(31 downto 0);
   signal output_counter   : unsigned(31 downto 0);
 
-  --signal dut_prog_data    : std_logic_vector(C_DWIDTH-1 downto 0);
-  --signal dut_prog_addr    : std_logic_vector(C_AWIDTH-1 downto 0);
-  --signal dut_prog_en      : std_logic;
-  --signal dut_prog_done    : std_logic;
+  signal time_step        : std_logic_vector(31 downto 0);
+  signal tau              : std_logic_vector(31 downto 0);
+  signal alpha1           : std_logic_vector(31 downto 0);
 
   signal dut_din          : std_logic_vector(C_AWIDTH-1 downto 0);
   signal dut_din_integer  : integer := 0;
@@ -296,6 +316,11 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal din_valid_rand   : std_logic;
   signal dout_ready_rand  : std_logic;
 
+  signal stream_log_data        : std_logic_vector(31 downto 0);
+  signal stream_log_data_valid  : std_logic;
+  signal stream_log_data_ready  : std_logic;
+  signal stream_log_data_last   : std_logic;
+
 begin
 
   p_clk : process
@@ -307,6 +332,12 @@ begin
   end process;
 
   p_main : process
+
+    variable v_char_buffer  : character;
+
+    type char_file_t is file of character;
+    file file_ptr : char_file_t;
+
   begin
     -- reset signals to defaults:
     dut_reset       <= '1';
@@ -315,10 +346,23 @@ begin
     dut_din_last    <= '0';
     din_valid_main  <= '0';
 
-    --dut_prog_data   <= (others => '0');
-    --dut_prog_addr   <= (others => '0');
-    --dut_prog_en     <= '0';
-    --dut_prog_done   <= '0';
+    file_open(file_ptr, G_INPUT_FNAME(G_INPUT_FNAME'left to G_INPUT_FNAME'right-3) & "bin");
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      time_step(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      tau(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      alpha1(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    file_close(file_ptr);
+
 
     wait for C_CLK_PERIOD*100;
     wait until rising_edge(clk);
@@ -327,25 +371,16 @@ begin
 
     wait until rising_edge(clk);
 
-    --for i in 0 to 2**C_AWIDTH-1 loop
-    --  dut_prog_en <= '1';
-    --  dut_prog_addr <= std_logic_vector(to_unsigned(i, dut_prog_addr'length));
-    --  dut_prog_data <= std_logic_vector(to_unsigned(i, dut_prog_data'length));
-    --  wait until rising_edge(clk);
-    --end loop;
-    --dut_prog_done   <= '1';
-    --dut_prog_en     <= '0';
-
-    generate_axi_stream
-    (
-      G_INPUT_FNAME,
-      clk,
-      dut_din_integer,
-      din_valid_main,
-      dut_din_valid,
-      dut_din_ready,
-      dut_din_last
-    );
+    --generate_axi_stream
+    --(
+    --  G_INPUT_FNAME,
+    --  clk,
+    --  dut_din_integer,
+    --  din_valid_main,
+    --  dut_din_valid,
+    --  dut_din_ready,
+    --  dut_din_last
+    --);
 
     wait;
 
@@ -381,30 +416,42 @@ begin
     end if;
   end process;
 
+
+  stream_log_data       <= << signal u_dut.exp_lut_dout             : std_logic_vector(31 downto 0) >>;
+  stream_log_data_valid <= << signal u_dut.exp_lut_dout_valid       : std_logic >>;
+  stream_log_data_ready <= << signal u_dut.exp_lut_dout_ready       : std_logic >>;
+  stream_log_data_last  <= '0';
+
+  --stream_log_data       <= << signal u_dut.t_minus_tau            : std_logic_vector(31 downto 0) >>;
+  --stream_log_data_valid <= << signal u_dut.t_minus_tau_dout_valid : std_logic >>;
+  --stream_log_data_ready <= << signal u_dut.t_minus_tau_dout_ready : std_logic >>;
+  --stream_log_data_last  <= '0';
+
+
   p_log_output : process
   begin
     --log_axi_stream
     --(
     --  G_OUTPUT_FNAME,
-    --  0,
+    --  100,
     --  0,
     --  clk,
-    --  dut_dout,
-    --  dut_dout_valid,
-    --  dut_dout_ready,
-    --  dut_dout_last
+    --  stream_log_data,
+    --  stream_log_data_valid,
+    --  stream_log_data_ready,
+    --  stream_log_data_last
     --);
 
     log_bin_axi_stream
     (
       G_OUTPUT_FNAME,
-      0,
+      100000,
       4,
       clk,
-      dut_dout,
-      dut_dout_valid,
-      dut_dout_ready,
-      dut_dout_last
+      stream_log_data,
+      stream_log_data_valid,
+      stream_log_data_ready,
+      stream_log_data_last
     );
   
     wait for C_CLK_PERIOD*10;
@@ -434,59 +481,24 @@ begin
 
   dut_din         <= std_logic_vector(to_unsigned(dut_din_integer, dut_din'length));
 
-
-  u_dut : exponential_lut
-    generic map
-    (
-      G_BUFFER_INPUT  => true,
-      G_BUFFER_OUTPUT => true
-    )
+  u_dut : chirplet_gen
     port map
     (
       clk             => clk,
       reset           => dut_reset,
       enable          => dut_enable,
 
-      din             => dut_din,
-      din_valid       => dut_din_valid,
-      din_ready       => dut_din_ready,
-      din_last        => dut_din_last,
+      din_tau         => tau,--x"40000000", -- 2.0
+      din_t_step      => time_step,--x"3dcccccd", -- 0.1
+      din_alpha1      => alpha1,
+      din_valid       => '1',
+      din_ready       => open,
+      din_last        => '0',
 
-      dout            => dut_dout,
-      dout_valid      => dut_dout_valid,
-      dout_ready      => dut_dout_ready,
-      dout_last       => dut_dout_last
+      dout            => open,
+      dout_valid      => open,
+      dout_ready      => '1',
+      dout_last       => open
     );
-
-  --u_dut : axis_lut
-  --  generic map
-  --  (
-  --    G_AWIDTH        => C_AWIDTH,
-  --    G_DWIDTH        => C_DWIDTH,
-  --    G_BUFFER_INPUT  => true,
-  --    G_BUFFER_OUTPUT => true
-  --  )
-  --  port map
-  --  (
-  --    clk         => clk,
-  --    reset       => dut_reset,
-  --    enable      => dut_enable,
-  --
-  --    prog_data   => dut_prog_data,
-  --    prog_addr   => dut_prog_addr,
-  --    prog_en     => dut_prog_en,
-  --    prog_done   => dut_prog_done,
-  --
-  --    din         => dut_din,
-  --    din_valid   => dut_din_valid,
-  --    din_ready   => dut_din_ready,
-  --    din_last    => dut_din_last,
-  --
-  --    dout        => dut_dout,
-  --    dout_valid  => dut_dout_valid,
-  --    dout_ready  => dut_dout_ready,
-  --    dout_last   => dut_dout_last
-  --  );
-
 
 end behavioral;

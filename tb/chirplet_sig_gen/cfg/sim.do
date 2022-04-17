@@ -6,4 +6,4 @@ eval $vsim_command
 
 #add wave -recursive -depth 10 *
 add wave -recursive -depth 5 *
-run 10000us
+run 100000us
