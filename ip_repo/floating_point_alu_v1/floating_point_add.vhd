@@ -211,9 +211,10 @@ begin
     std_logic_vector(shift_right(unsigned(mantissa_added_buff), 1)) when lefthand_count_final = 0 else
     std_logic_vector(shift_left(unsigned(mantissa_added_buff), to_integer(lefthand_count_final - 1)));
 
-  mantissa_round <=
-    std_logic_vector(unsigned(mantissa_norm) + 1) when lefthand_count_final = 0 and mantissa_added_buff(0) = '1' else
-    mantissa_norm;
+  mantissa_round <= mantissa_norm;
+    --std_logic_vector(unsigned(mantissa_norm) + 1) when lefthand_count_final = 0 and mantissa_added_buff(0) = '1' else
+    --mantissa_norm;
+    -- todo: this causes an error when rounding causes an overflow... fuck
 
   exponent_norm <=
     (others => '0') when unsigned(mantissa_norm) = 0 else

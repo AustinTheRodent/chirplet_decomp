@@ -11,6 +11,7 @@ entity chirplet_gen is
 
     din_tau         : in  std_logic_vector(31 downto 0); -- floating point
     din_t_step      : in  std_logic_vector(31 downto 0); -- floating point
+    din_alpha1      : in  std_logic_vector(31 downto 0); -- floating point
     din_valid       : in  std_logic;
     din_ready       : out std_logic;
     din_last        : in  std_logic;
@@ -47,7 +48,7 @@ architecture rtl of chirplet_gen is
     );
   end component;
 
-  component exponential_lut is
+  component exponential_lut is -- todo: have this lut extend to exp(64) to keep powers of two
     generic
     (
       G_BUFFER_INPUT  : boolean := false;
@@ -111,6 +112,33 @@ architecture rtl of chirplet_gen is
     );
   end component;
 
+  component float_to_fixed is
+    generic
+    (
+      G_INTEGER_BITS  : integer range 0 to 64 := 16;
+      G_FRACT_BITS    : integer range 0 to 64 := 16;
+      G_SIGNED_OUTPUT : boolean := false;
+      G_BUFFER_INPUT  : boolean := false;
+      G_BUFFER_OUTPUT : boolean := false
+    );
+    port
+    (
+      clk             : in std_logic;
+      reset           : in std_logic;
+      enable          : in std_logic;
+
+      din             : in  std_logic_vector(31 downto 0); -- always uses 32 bit floating point
+      din_valid       : in  std_logic;
+      din_ready       : out std_logic;
+      din_last        : in  std_logic;
+
+      dout            : out std_logic_vector(G_INTEGER_BITS+G_FRACT_BITS-1 downto 0);
+      dout_valid      : out std_logic;
+      dout_ready      : in  std_logic;
+      dout_last       : out std_logic
+    );
+  end component;
+
   signal first_samp           : std_logic;
   signal time_sec             : std_logic_vector(31 downto 0);
   signal time_next            : std_logic_vector(31 downto 0);
@@ -119,14 +147,55 @@ architecture rtl of chirplet_gen is
   signal time_next_dout_valid : std_logic;
   signal time_next_dout_ready : std_logic;
 
+  signal counter_din1       : std_logic_vector(31 downto 0);
+  signal counter_din2       : std_logic_vector(31 downto 0);
+  signal counter_dout       : std_logic_vector(31 downto 0);
+
+  signal counter_din_valid  : std_logic;
+  signal counter_din_ready  : std_logic;
+  signal counter_dout_valid  : std_logic;
+  signal counter_dout_ready  : std_logic;
 
   signal t_minus_tau_din_valid  : std_logic;
   signal t_minus_tau_din_ready  : std_logic;
   signal t_minus_tau_dout_valid : std_logic;
   signal t_minus_tau_dout_ready : std_logic;
 
-  signal negative_tau         : std_logic_vector(31 downto 0);
-  signal t_minus_tau          : std_logic_vector(31 downto 0);
+  signal t_minus_tau_sqr_din_valid  : std_logic;
+  signal t_minus_tau_sqr_din_ready  : std_logic;
+  signal t_minus_tau_sqr_dout_valid : std_logic;
+  signal t_minus_tau_sqr_dout_ready : std_logic;
+
+  signal t_minus_tau_sqr_alpha_din_valid  : std_logic;
+  signal t_minus_tau_sqr_alpha_din_ready  : std_logic;
+  signal t_minus_tau_sqr_alpha_dout_valid : std_logic;
+  signal t_minus_tau_sqr_alpha_dout_ready : std_logic;
+
+  signal rescale_gaussian_din_valid  : std_logic;
+  signal rescale_gaussian_din_ready  : std_logic;
+  signal rescale_gaussian_dout_valid : std_logic;
+  signal rescale_gaussian_dout_ready : std_logic;
+
+  signal gaussian_index_din_valid  : std_logic;
+  signal gaussian_index_din_ready  : std_logic;
+  signal gaussian_index_dout_valid : std_logic;
+  signal gaussian_index_dout_ready : std_logic;
+
+  signal exp_lut_din_valid  : std_logic;
+  signal exp_lut_din_ready  : std_logic;
+  signal exp_lut_dout_valid : std_logic;
+  signal exp_lut_dout_ready : std_logic;
+
+  signal negative_tau             : std_logic_vector(31 downto 0);
+  signal negative_tau_din         : std_logic_vector(31 downto 0);
+  signal t_minus_tau              : std_logic_vector(31 downto 0);
+  signal t_minus_tau_sqr          : std_logic_vector(31 downto 0);
+  signal t_minus_tau_sqr_alpha    : std_logic_vector(31 downto 0);
+  signal t_minus_tau_sqr_rescale  : std_logic_vector(31 downto 0);
+  signal gaussian_index_dout  : std_logic_vector(16 downto 0);
+  signal gaussian_index_dout_int  : std_logic_vector(15 downto 0);
+  signal gaussian_index_round : std_logic_vector(15 downto 0);
+  signal exp_lut_dout : std_logic_vector(31 downto 0);
 
 begin
 
@@ -146,20 +215,44 @@ begin
   negative_tau(31)          <= din_tau(31) xor '1';
   negative_tau(30 downto 0) <= din_tau(30 downto 0);
 
-  time_next_din_valid   <= '1';
 
-  time_sec <=
-    '1' & din_t_step(30 downto 0) when first_samp = '0' else
-    time_next;
+  counter_din1 <= x"3f800000";
+  counter_din2 <=
+    (others => '0') when first_samp = '0' else
+    counter_dout;
 
-  u_time_next : floating_point_add
+  counter_din_valid <= '1';
+
+  u_counter : floating_point_add
     port map
     (
       clk         => clk,
       reset       => reset,
       enable      => enable,
 
-      din1        => time_sec,
+      din1        => counter_din1,
+      din2        => counter_din2,
+      din_valid   => counter_din_valid,
+      din_ready   => counter_din_ready,
+      din_last    => '0',
+
+      dout        => counter_dout,
+      dout_valid  => counter_dout_valid,
+      dout_ready  => counter_dout_ready,
+      dout_last   => open
+    );
+
+  time_next_din_valid <= counter_dout_valid;
+  counter_dout_ready <= time_next_din_ready;
+
+  u_time_next : floating_point_mult
+    port map
+    (
+      clk         => clk,
+      reset       => reset,
+      enable      => enable,
+
+      din1        => counter_dout,
       din2        => din_t_step,
       din_valid   => time_next_din_valid,
       din_ready   => time_next_din_ready,
@@ -171,6 +264,7 @@ begin
       dout_last   => open
     );
 
+  t_minus_tau_din_valid <= time_next_dout_valid;
   time_next_dout_ready  <= t_minus_tau_din_ready;
 
   u_t_minus_tau : floating_point_add
@@ -180,8 +274,8 @@ begin
       reset       => reset,
       enable      => enable,
   
-      din1        => negative_tau;
-      din2        => time_next
+      din1        => negative_tau,
+      din2        => time_next,
       din_valid   => t_minus_tau_din_valid,
       din_ready   => t_minus_tau_din_ready,
       din_last    => '0',
@@ -192,7 +286,140 @@ begin
       dout_last   => open
     );
 
-  t_minus_tau_dout_ready <= '1';
-  -- todo: (t - tau)^2
+
+
+
+
+
+  t_minus_tau_sqr_din_valid <= t_minus_tau_dout_valid;
+  t_minus_tau_dout_ready    <= t_minus_tau_sqr_din_ready;
+
+  u_t_minus_tau_sqr : floating_point_mult
+    port map
+    (
+      clk         => clk,
+      reset       => reset,
+      enable      => enable,
+
+      din1        => t_minus_tau,
+      din2        => t_minus_tau,
+      din_valid   => t_minus_tau_sqr_din_valid,
+      din_ready   => t_minus_tau_sqr_din_ready,
+      din_last    => '0',
+
+      dout        => t_minus_tau_sqr,
+      dout_valid  => t_minus_tau_sqr_dout_valid,
+      dout_ready  => t_minus_tau_sqr_dout_ready,
+      dout_last   => open
+    );
+
+  t_minus_tau_sqr_alpha_din_valid <= t_minus_tau_sqr_dout_valid;
+  t_minus_tau_sqr_dout_ready <= t_minus_tau_sqr_alpha_din_ready;
+
+  u_t_minus_tau_sqr_alpha : floating_point_mult
+    port map
+    (
+      clk         => clk,
+      reset       => reset,
+      enable      => enable,
+
+      din1        => t_minus_tau_sqr,
+      din2        => din_alpha1,
+      din_valid   => t_minus_tau_sqr_alpha_din_valid,
+      din_ready   => t_minus_tau_sqr_alpha_din_ready,
+      din_last    => '0',
+
+      dout        => t_minus_tau_sqr_alpha,
+      dout_valid  => t_minus_tau_sqr_alpha_dout_valid,
+      dout_ready  => t_minus_tau_sqr_alpha_dout_ready,
+      dout_last   => open
+    );
+
+  rescale_gaussian_din_valid        <= t_minus_tau_sqr_alpha_dout_valid;
+  t_minus_tau_sqr_alpha_dout_ready  <= rescale_gaussian_din_ready;
+
+  u_rescale_gaussian : floating_point_mult
+    port map
+    (
+      clk         => clk,
+      reset       => reset,
+      enable      => enable,
+
+      din1        => t_minus_tau_sqr_alpha,
+      din2        => x"45000000", -- 1024 = 2^16/32
+      din_valid   => rescale_gaussian_din_valid,
+      din_ready   => rescale_gaussian_din_ready,
+      din_last    => '0',
+
+      dout        => t_minus_tau_sqr_rescale,
+      dout_valid  => rescale_gaussian_dout_valid,
+      dout_ready  => rescale_gaussian_dout_ready,
+      dout_last   => open
+    );
+
+  gaussian_index_din_valid <= rescale_gaussian_dout_valid;
+  rescale_gaussian_dout_ready <= gaussian_index_din_ready;
+
+  u_gaussian_lut_index : float_to_fixed
+    generic map
+    (
+      G_INTEGER_BITS  => 16,
+      G_FRACT_BITS    => 1,
+      G_SIGNED_OUTPUT => false,
+      G_BUFFER_INPUT  => false,
+      G_BUFFER_OUTPUT => false
+    )
+    port map
+    (
+      clk             => clk,
+      reset           => reset,
+      enable          => enable,
+
+      din             => t_minus_tau_sqr_rescale,
+      din_valid       => gaussian_index_din_valid,
+      din_ready       => gaussian_index_din_ready,
+      din_last        => '0',
+
+      dout            => gaussian_index_dout,
+      dout_valid      => gaussian_index_dout_valid,
+      dout_ready      => gaussian_index_dout_ready,
+      dout_last       => open
+    );
+
+  gaussian_index_dout_int <= gaussian_index_dout(16 downto 1);
+
+  gaussian_index_round <=
+    gaussian_index_dout_int when gaussian_index_dout(0) = '0' else
+    std_logic_vector(unsigned(gaussian_index_dout_int) + 1) when gaussian_index_dout_int /= x"FFFF" else
+    gaussian_index_dout_int;
+
+  exp_lut_din_valid <= gaussian_index_dout_valid;
+  gaussian_index_dout_ready <= exp_lut_din_ready;
+
+
+  u_exponential_lut : exponential_lut
+    generic map
+    (
+      G_BUFFER_INPUT  => false,
+      G_BUFFER_OUTPUT => false
+    )
+    port map
+    (
+      clk             => clk,
+      reset           => reset,
+      enable          => enable,
+
+      din             => gaussian_index_round,
+      din_valid       => exp_lut_din_valid,
+      din_ready       => exp_lut_din_ready,
+      din_last        => '0',
+
+      dout            => exp_lut_dout,
+      dout_valid      => exp_lut_dout_valid,
+      dout_ready      => exp_lut_dout_ready,
+      dout_last       => open
+    );
+
+  exp_lut_dout_ready <= '1';
 
 end rtl;
