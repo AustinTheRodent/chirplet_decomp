@@ -8,11 +8,14 @@ export TULIP_WIN=`$cyg2win $TULIP`
 sim_name="chirplet_sig_gen"
 input_vector_fname=$sim_name"_input.txt"
 
-VLD_COEFF=0.5
-RDY_COEFF=0.5
+VLD_COEFF=1.0
+RDY_COEFF=1.0
 rand_seed=`date +%s`
 echo rand_seed: $rand_seed
 
+time_step=0.00000001
+tau=0.0005
+alpha1=20000000
 input_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
 output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/output.bin"
 num_samps=10000
@@ -107,29 +110,17 @@ fi
 ##################################################################
 if [ $main_arg == "all" ] || [ $main_arg == "hw" ] || [ $main_arg == "sw" ] || [ $main_arg == "onlygen" ]; then
   echo generating simulation setup ...
+  rm -f $input_fname
+  touch $input_fname
 
-  #$script_dir/c_code/bin/txt_to_bin \
-  #  -i $script_dir/a_taps.txt \
-  #  -o $script_dir/a_taps.bin \
-  #  -t float
-  #
-  #$script_dir/c_code/bin/txt_to_bin \
-  #  -i $script_dir/b_taps.txt \
-  #  -o $script_dir/b_taps.bin \
-  #  -t float
+  echo $time_step > $input_fname
+  echo $tau >> $input_fname
+  echo $alpha1 >> $input_fname
 
-  if [ $use_user_input == "false" ];then
-    python $TULIP_WIN/fpga_builds/tb/${sim_name}/python/gen_rand_vals.py \
-      -s 8 -n $num_samps > $input_fname
-  else
-    cp $usr_file_name $input_fname
-    num_samps=`wc -l < $input_fname`
-  fi
-
-  #$script_dir/c_code/bin/txt_to_bin \
-  #  -i $input_fname \
-  #  -o ${input_fname%txt*}bin \
-  #  -t float
+  $script_dir/c_code/bin/txt_to_bin \
+    -i $input_fname \
+    -o ${input_fname%txt*}bin \
+    -t float
 
   if [ $main_arg == "onlygen" ]; then
     exit

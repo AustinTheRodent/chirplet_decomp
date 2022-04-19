@@ -232,9 +232,10 @@ begin
     output_buff_dout_last   <= output_buff_din_last;
   end generate;
 
-  dout_int        <= output_buff_dout;
-  dout_valid_int  <= output_buff_dout_valid;
-  dout_last_int   <= output_buff_dout_last;
+  dout_int                <= output_buff_dout;
+  dout_valid_int          <= output_buff_dout_valid;
+  output_buff_dout_ready  <= dout_ready;
+  dout_last_int           <= output_buff_dout_last;
 
   dout        <= dout_int;
   dout_valid  <= dout_valid_int;

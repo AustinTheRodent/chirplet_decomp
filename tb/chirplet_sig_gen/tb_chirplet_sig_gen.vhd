@@ -7,6 +7,10 @@ use std.textio.all;
 use ieee.std_logic_textio.all;
 use std.env.finish;
 
+-- todo:
+  --binary read/write file io
+  --eval exponential LUT
+
 entity tb_chirplet_sig_gen is
   generic
   (
@@ -86,6 +90,48 @@ architecture behavioral of tb_chirplet_sig_gen is
 
   end procedure;
 
+  procedure log_bin_axi_stream
+  (
+    file_name         : in  string;
+    num_samps         : in  integer;
+    bytes_per_samp    : in  integer;
+    signal clk        : in  std_logic;
+    signal din        : in  std_logic_vector;
+    signal din_valid  : in  std_logic;
+    signal din_ready  : in  std_logic;
+    signal din_last   : in  std_logic
+  ) is
+    variable v_counter      : integer;
+    variable v_char_buffer  : character;
+    type char_file_t is file of character;
+    file file_ptr           : char_file_t;
+
+  begin
+    file_open(file_ptr, file_name, write_mode);
+    v_counter := 0;
+
+    while 1 = 1 loop
+      wait until rising_edge(clk);
+      if din_valid = '1' and din_ready = '1' then
+        for i in 0 to bytes_per_samp-1 loop
+          v_char_buffer := character'val(to_integer(unsigned(din(i*8+7 downto i*8))));
+          write(file_ptr, v_char_buffer);
+        end loop;
+        if num_samps = 0 then
+          if din_last = '1' then
+            exit;
+          end if;
+        elsif v_counter = num_samps-1 then
+          exit;
+        end if;
+        v_counter := v_counter + 1;
+      end if;
+    end loop;
+
+    file_close(file_ptr);
+
+  end procedure;
+
   procedure generate_axi_stream
   (
     file_name               : in  string;
@@ -129,45 +175,121 @@ architecture behavioral of tb_chirplet_sig_gen is
     end loop;
 
     file_close(file_ptr);
+    dout_valid_main <= '0';
+    dout_last       <= '0';
     wait until rising_edge(clk);
     dout_valid_main <= '0';
     dout_last       <= '0';
 
   end procedure;
 
-  component axis_lut is
+  procedure generate_bin_axi_stream
+  (
+    file_name               : in  string;
+    bytes_per_samp          : in  integer;
+    file_len                : in  integer;
+    signal clk              : in  std_logic;
+    signal dout             : out std_logic_vector;
+    signal dout_valid_main  : out std_logic;
+    signal dout_valid       : in  std_logic;
+    signal dout_ready       : in  std_logic;
+    signal dout_last        : out std_logic
+  ) is
+    variable v_flen         : integer;
+    variable v_line_count   : integer;
+
+    variable v_char_buffer  : character;
+    type char_file_t is file of character;
+    file file_ptr           : char_file_t;
+  begin
+
+    file_open(file_ptr, file_name, read_mode);
+    v_flen          := file_len;
+    dout_valid_main <= '0';
+    dout_last       <= '0';
+    v_line_count    := 1;
+
+    for i in 0 to bytes_per_samp-1 loop
+      read(file_ptr, v_char_buffer);
+      dout(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    wait until rising_edge(clk);
+    dout_valid_main <= '1';
+
+    while v_line_count <= v_flen loop
+      wait until rising_edge(clk);
+      if dout_valid = '1' and dout_ready = '1' then
+        if v_line_count < v_flen then
+          for i in 0 to bytes_per_samp-1 loop
+            read(file_ptr, v_char_buffer);
+            dout(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+          end loop;
+        end if;
+        if v_line_count = v_flen-1 then
+          dout_last <= '1';
+        end if;
+        v_line_count := v_line_count + 1;
+      end if;
+    end loop;
+
+    file_close(file_ptr);
+    dout_valid_main <= '0';
+    dout_last       <= '0';
+    wait until rising_edge(clk);
+    dout_valid_main <= '0';
+    dout_last       <= '0';
+
+  end procedure;
+
+  component exponential_lut is
     generic
     (
-    G_AWIDTH        : integer range 1 to 24 := 16;
-    G_DWIDTH        : integer range 1 to 64 := 16;
-    G_BUFFER_INPUT  : boolean := false;
-    G_BUFFER_OUTPUT : boolean := false
+      G_BUFFER_INPUT  : boolean := false;
+      G_BUFFER_OUTPUT : boolean := false
     );
     port
     (
-      clk           : in std_logic;
-      reset         : in std_logic;
-      enable        : in std_logic;
+      clk             : in std_logic;
+      reset           : in std_logic;
+      enable          : in std_logic;
 
-      prog_data     : in  std_logic_vector(G_DWIDTH-1 downto 0);
-      prog_addr     : in  std_logic_vector(G_AWIDTH-1 downto 0);
-      prog_en       : in  std_logic;
-      prog_done     : in  std_logic;
+      din             : in  std_logic_vector(15 downto 0);
+      din_valid       : in  std_logic;
+      din_ready       : out std_logic;
+      din_last        : in  std_logic;
 
-      din           : in  std_logic_vector(G_AWIDTH-1 downto 0);
-      din_valid     : in  std_logic;
-      din_ready     : out std_logic;
-      din_last      : in  std_logic;
-      dout          : out std_logic_vector(G_DWIDTH-1 downto 0);
-      dout_valid    : out std_logic;
-      dout_ready    : in  std_logic;
-      dout_last     : out std_logic
+      dout            : out std_logic_vector(31 downto 0);
+      dout_valid      : out std_logic;
+      dout_ready      : in  std_logic;
+      dout_last       : out std_logic
+    );
+  end component;
+
+  component chirplet_gen is
+    port
+    (
+      clk             : in std_logic;
+      reset           : in std_logic;
+      enable          : in std_logic;
+
+      din_tau         : in  std_logic_vector(31 downto 0); -- floating point
+      din_t_step      : in  std_logic_vector(31 downto 0); -- floating point
+      din_alpha1      : in  std_logic_vector(31 downto 0); -- floating point
+      din_valid       : in  std_logic;
+      din_ready       : out std_logic;
+      din_last        : in  std_logic;
+
+      dout            : out std_logic_vector(31 downto 0);
+      dout_valid      : out std_logic;
+      dout_ready      : in  std_logic;
+      dout_last       : out std_logic
     );
   end component;
 
   constant C_CLK_PERIOD   : time    := 20 ns; -- 50MHz
-  constant C_DWIDTH       : integer := 16;
-  constant C_AWIDTH       : integer := 8;
+  constant C_DWIDTH       : integer := 32;
+  constant C_AWIDTH       : integer := 16;
 
   signal clk              : std_logic;
   signal dut_reset        : std_logic;
@@ -176,10 +298,9 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal input_counter    : unsigned(31 downto 0);
   signal output_counter   : unsigned(31 downto 0);
 
-  signal dut_prog_data    : std_logic_vector(C_DWIDTH-1 downto 0);
-  signal dut_prog_addr    : std_logic_vector(C_AWIDTH-1 downto 0);
-  signal dut_prog_en      : std_logic;
-  signal dut_prog_done    : std_logic;
+  signal time_step        : std_logic_vector(31 downto 0);
+  signal tau              : std_logic_vector(31 downto 0);
+  signal alpha1           : std_logic_vector(31 downto 0);
 
   signal dut_din          : std_logic_vector(C_AWIDTH-1 downto 0);
   signal dut_din_integer  : integer := 0;
@@ -195,6 +316,11 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal din_valid_rand   : std_logic;
   signal dout_ready_rand  : std_logic;
 
+  signal stream_log_data        : std_logic_vector(31 downto 0);
+  signal stream_log_data_valid  : std_logic;
+  signal stream_log_data_ready  : std_logic;
+  signal stream_log_data_last   : std_logic;
+
 begin
 
   p_clk : process
@@ -206,6 +332,12 @@ begin
   end process;
 
   p_main : process
+
+    variable v_char_buffer  : character;
+
+    type char_file_t is file of character;
+    file file_ptr : char_file_t;
+
   begin
     -- reset signals to defaults:
     dut_reset       <= '1';
@@ -214,10 +346,23 @@ begin
     dut_din_last    <= '0';
     din_valid_main  <= '0';
 
-    dut_prog_data   <= (others => '0');
-    dut_prog_addr   <= (others => '0');
-    dut_prog_en     <= '0';
-    dut_prog_done   <= '0';
+    file_open(file_ptr, G_INPUT_FNAME(G_INPUT_FNAME'left to G_INPUT_FNAME'right-3) & "bin");
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      time_step(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      tau(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      alpha1(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    file_close(file_ptr);
+
 
     wait for C_CLK_PERIOD*100;
     wait until rising_edge(clk);
@@ -226,25 +371,16 @@ begin
 
     wait until rising_edge(clk);
 
-    for i in 0 to 2**C_AWIDTH-1 loop
-      dut_prog_en <= '1';
-      dut_prog_addr <= std_logic_vector(to_unsigned(i, dut_prog_addr'length));
-      dut_prog_data <= std_logic_vector(to_unsigned(i, dut_prog_data'length));
-      wait until rising_edge(clk);
-    end loop;
-    dut_prog_done   <= '1';
-    dut_prog_en     <= '0';
-
-    generate_axi_stream
-    (
-      G_INPUT_FNAME,
-      clk,
-      dut_din_integer,
-      din_valid_main,
-      dut_din_valid,
-      dut_din_ready,
-      dut_din_last
-    );
+    --generate_axi_stream
+    --(
+    --  G_INPUT_FNAME,
+    --  clk,
+    --  dut_din_integer,
+    --  din_valid_main,
+    --  dut_din_valid,
+    --  dut_din_ready,
+    --  dut_din_last
+    --);
 
     wait;
 
@@ -280,19 +416,44 @@ begin
     end if;
   end process;
 
+
+  stream_log_data       <= << signal u_dut.exp_lut_dout             : std_logic_vector(31 downto 0) >>;
+  stream_log_data_valid <= << signal u_dut.exp_lut_dout_valid       : std_logic >>;
+  stream_log_data_ready <= << signal u_dut.exp_lut_dout_ready       : std_logic >>;
+  stream_log_data_last  <= '0';
+
+  --stream_log_data       <= << signal u_dut.t_minus_tau            : std_logic_vector(31 downto 0) >>;
+  --stream_log_data_valid <= << signal u_dut.t_minus_tau_dout_valid : std_logic >>;
+  --stream_log_data_ready <= << signal u_dut.t_minus_tau_dout_ready : std_logic >>;
+  --stream_log_data_last  <= '0';
+
+
   p_log_output : process
   begin
-    log_axi_stream
+    --log_axi_stream
+    --(
+    --  G_OUTPUT_FNAME,
+    --  100,
+    --  0,
+    --  clk,
+    --  stream_log_data,
+    --  stream_log_data_valid,
+    --  stream_log_data_ready,
+    --  stream_log_data_last
+    --);
+
+    log_bin_axi_stream
     (
       G_OUTPUT_FNAME,
-      0,
-      0,
+      100000,
+      4,
       clk,
-      dut_dout,
-      dut_dout_valid,
-      dut_dout_ready,
-      dut_dout_last
+      stream_log_data,
+      stream_log_data_valid,
+      stream_log_data_ready,
+      stream_log_data_last
     );
+  
     wait for C_CLK_PERIOD*10;
     report "simulation finished" severity failure;
   end process;
@@ -320,34 +481,24 @@ begin
 
   dut_din         <= std_logic_vector(to_unsigned(dut_din_integer, dut_din'length));
 
-  u_dut : axis_lut
-    generic map
-    (
-      G_AWIDTH        => C_AWIDTH,
-      G_DWIDTH        => C_DWIDTH,
-      G_BUFFER_INPUT  => true,
-      G_BUFFER_OUTPUT => true
-    )
+  u_dut : chirplet_gen
     port map
     (
-      clk         => clk,
-      reset       => dut_reset,
-      enable      => dut_enable,
+      clk             => clk,
+      reset           => dut_reset,
+      enable          => dut_enable,
 
-      prog_data   => dut_prog_data,
-      prog_addr   => dut_prog_addr,
-      prog_en     => dut_prog_en,
-      prog_done   => dut_prog_done,
+      din_tau         => tau,--x"40000000", -- 2.0
+      din_t_step      => time_step,--x"3dcccccd", -- 0.1
+      din_alpha1      => alpha1,
+      din_valid       => '1',
+      din_ready       => open,
+      din_last        => '0',
 
-      din         => dut_din,
-      din_valid   => dut_din_valid,
-      din_ready   => dut_din_ready,
-      din_last    => dut_din_last,
-
-      dout        => dut_dout,
-      dout_valid  => dut_dout_valid,
-      dout_ready  => dut_dout_ready,
-      dout_last   => dut_dout_last
+      dout            => open,
+      dout_valid      => open,
+      dout_ready      => '1',
+      dout_last       => open
     );
 
 end behavioral;

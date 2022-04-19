@@ -164,10 +164,11 @@ begin
     std_logic_vector(shift_right(unsigned(mantissa_mult_buff), C_MANT_LEN)) when mantissa_mult_ofl = '0' else
     std_logic_vector(shift_right(unsigned(mantissa_mult_buff), C_MANT_LEN+1));
 
-  mantissa_round <=
-    mantissa_norm when exponent_ofl = '0' and mantissa_mult_buff(C_MANT_LEN-1) = '0' else
-    mantissa_norm when exponent_ofl = '1' and mantissa_mult_buff(C_MANT_LEN) = '0' else
-    std_logic_vector(unsigned(mantissa_norm) + 1);
+  mantissa_round <= mantissa_norm;
+    --mantissa_norm when exponent_ofl = '0' and mantissa_mult_buff(C_MANT_LEN-1) = '0' else
+    --mantissa_norm when exponent_ofl = '1' and mantissa_mult_buff(C_MANT_LEN) = '0' else
+    --std_logic_vector(unsigned(mantissa_norm) + 1);
+    -- todo: this causes an error when rounding causes an overflow... fuck
 
   exponent_short <=
     (others => '0') when exponent_ufl = '1' else
