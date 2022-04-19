@@ -205,7 +205,7 @@ begin
       if reset = '1' or enable = '0' then
         first_samp <= '0';
       else
-        if time_next_din_valid = '1' and time_next_din_ready = '1' then
+        if counter_din_valid = '1' and counter_din_ready = '1' then
           first_samp <= '1';
         end if;
       end if;
@@ -218,7 +218,7 @@ begin
 
   counter_din1 <= x"3f800000";
   counter_din2 <=
-    (others => '0') when first_samp = '0' else
+    x"Bf800000" when first_samp = '0' else
     counter_dout;
 
   counter_din_valid <= '1';
