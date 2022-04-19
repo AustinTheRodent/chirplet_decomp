@@ -16,7 +16,6 @@ echo rand_seed: $rand_seed
 time_step=0.00000001
 tau=0.0005
 alpha1=20000000
-
 input_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
 output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/output.bin"
 num_samps=10000
