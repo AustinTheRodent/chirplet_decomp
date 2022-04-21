@@ -93,6 +93,9 @@ begin
           done<='0';
           state<=0;
           finaladditionstate<=0;
+          for j in 0 to 63 loop
+            partialsum(j) <="000000000000000000000000000000000000000000000000";
+          end loop;
         else
           done<='1';
           output<=partialsum(0);
