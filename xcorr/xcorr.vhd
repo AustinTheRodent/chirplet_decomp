@@ -26,9 +26,11 @@ use IEEE.NUMERIC_STD.ALL;
 entity xcorr is
   Port (clk,signalvalid,chirpvalid: in STD_LOGIC;
   inputchirp: in std_logic_vector(0 to 1023);
+  inputchirpimag: in std_logic_vector(0 to 1023);
   inputsignal: in std_logic_vector(0 to 1023);
+  inputsignalimag: in std_logic_vector(0 to 1023);
   outvalid: out STD_LOGIC;
-  output: out signed(0 to 47));
+  output: out signed(0 to 95));
 end xcorr;
 
 architecture Behavioral of xcorr is
@@ -38,7 +40,9 @@ type signalbuffer is array(0 to 63) of signed(15 downto 0);
 type outputbuffer is array(0 to 63) of signed(47 downto 0);
 
 signal sig: arraysignal;
+signal sigimag: arraysignal;
 signal partialsum: outputbuffer := (others=>(others=>'0'));
+signal partialsumimag: outputbuffer := (others=>(others=>'0'));
 
 signal state: integer:= 0;
 signal finaladditionstate: integer:=0;
@@ -52,13 +56,15 @@ begin
     if rising_edge(clk) and chirpvalid='1' then -- add chirplet from axi port to partial convolution buffer
       if state/=1562 and state/=1563 then
         for j in 0 to 63 loop 
-          partialsum(j) <= partialsum(j) + sig(state*64+j) * signed(inputchirp(16*j to 16*j+15));
+          partialsum(j) <= partialsum(j) + sig(state*64+j) * signed(inputchirp(16*j to 16*j+15)) + sigimag(state*64+j) * signed(inputchirpimag(16*j to 16*j+15));
+          partialsumimag(j) <= partialsumimag(j) + sigimag(state*64+j) * signed(inputchirp(16*j to 16*j+15)) - sig(state*64+j) * signed(inputchirpimag(16*j to 16*j+15));
         end loop;
         state <=state+1;
       end if;
       if state=1562 then
         for j in 0 to 32 loop 
-          partialsum(j) <= partialsum(j) + sig(state*64+j) * signed(inputchirp(16*j to 16*j+15));
+          partialsum(j) <= partialsum(j) + sig(state*64+j) * signed(inputchirp(16*j to 16*j+15)) + sigimag(state*64+j) * signed(inputchirpimag(16*j to 16*j+15));
+          partialsumimag(j) <= partialsumimag(j) + sigimag(state*64+j) * signed(inputchirp(16*j to 16*j+15)) - sig(state*64+j) * signed(inputchirpimag(16*j to 16*j+15));
         end loop;
         state <=state+1;
       end if;
@@ -68,11 +74,13 @@ begin
       if siginstate/=1562 and siginstate/=1563 then
         for j in 0 to 63 loop
           sig(siginstate*64+j) <= signed(inputsignal(16*j to 16*j+15));
+          sigimag(siginstate*64+j) <= signed(inputsignalimag(16*j to 16*j+15));
         end loop;
       end if;
       if siginstate=1562 then
         for j in 0 to 32 loop
           sig(siginstate*64+j) <= signed(inputsignal(16*j to 16*j+15));
+          sigimag(siginstate*64+j) <= signed(inputsignalimag(16*j to 16*j+15));
         end loop;
       end if;
       if siginstate=1563 then
@@ -86,6 +94,7 @@ begin
       if state=1563 and finaladditionstate/=6 then
         for j in 0 to 31 loop
           partialsum(j) <=partialsum(2*j)+partialsum(2*j+1);
+          partialsumimag(j) <=partialsumimag(2*j)+partialsumimag(2*j+1);
         end loop;
         finaladditionstate<=finaladditionstate+1;
       elsif state=1563 then
@@ -95,10 +104,12 @@ begin
           finaladditionstate<=0;
           for j in 0 to 63 loop
             partialsum(j) <="000000000000000000000000000000000000000000000000";
+            partialsumimag(j) <="000000000000000000000000000000000000000000000000";
           end loop;
         else
           done<='1';
-          output<=partialsum(0);
+          output(0 to 47)<=partialsum(0);
+          output(48 to 95)<=partialsumimag(0);
         end if;
       end if;
     end if;

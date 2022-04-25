@@ -31,21 +31,25 @@ architecture Behavioral of xcorr_tb is
   component xcorr
     Port (clk,signalvalid,chirpvalid: in STD_LOGIC;
     inputchirp: in std_logic_vector(0 to 1023);
+    inputchirpimag: in std_logic_vector(0 to 1023);
     inputsignal: in std_logic_vector(0 to 1023);
+    inputsignalimag: in std_logic_vector(0 to 1023);
     outvalid: out STD_LOGIC;
-    output: out signed(0 to 47));
+    output: out signed(0 to 95));
   end component;
   type signalbuffer is array(0 to 63) of signed(15 downto 0);
   
   signal clk,signalvalid,chirpvalid: STD_LOGIC;
   signal inputchirp: std_logic_vector(0 to 1023);
+  signal inputchirpimag: std_logic_vector(0 to 1023);
   signal inputsignal: std_logic_vector(0 to 1023);
+  signal inputsignalimag: std_logic_vector(0 to 1023);
   signal outvalid: STD_LOGIC;
-  signal output: signed(0 to 47);
+  signal output: signed(0 to 95);
   signal tbstate: unsigned(0 to 15):="0000000000000000";
   
 begin
-  UUT: xcorr port map(clk,signalvalid,chirpvalid,inputchirp,inputsignal,outvalid,output);
+  UUT: xcorr port map(clk,signalvalid,chirpvalid,inputchirp,inputchirpimag,inputsignal,inputsignalimag,outvalid,output);
   
   process
   begin
@@ -59,6 +63,7 @@ begin
       signalvalid<='1';
       for j in 0 to 63 loop
         inputsignal(16*j to 16*j+15)<=std_logic_vector(to_signed(1,16));
+        inputsignalimag(16*j to 16*j+15)<=std_logic_vector(to_signed(1,16));
       end loop;
     end if;
     
@@ -67,6 +72,7 @@ begin
       chirpvalid<='1';
       for j in 0 to 63 loop
         inputchirp(16*j to 16*j+15)<=std_logic_vector(to_signed(1,16));
+        inputchirpimag(16*j to 16*j+15)<=std_logic_vector(to_signed(0,16));
       end loop;
     end if;
     
@@ -79,7 +85,7 @@ begin
   process(outvalid)
   begin
     if rising_edge(outvalid) then
-      report("xcorr="&to_string(to_integer(output)));
+      report("xcorr="&to_string(to_integer(output(0 to 47)))&"+"&to_string(to_integer(output(48 to 95)))&"i");
     elsif falling_edge(outvalid) then
       finish;
     end if;
