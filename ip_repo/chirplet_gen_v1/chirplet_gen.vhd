@@ -496,7 +496,7 @@ begin
   u_t_minus_tau_sqr : floating_point_mult
     generic map
     (
-      G_BUFFER_INPUT  => false,
+      G_BUFFER_INPUT  => true,
       G_BUFFER_OUTPUT => false
     )
     port map
@@ -642,8 +642,8 @@ begin
   u_t_m_tau_times_fc : floating_point_mult
     generic map
     (
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -669,8 +669,8 @@ begin
       G_INTEGER_BITS  => 25,
       G_FRACT_BITS    => 17,
       G_SIGNED_OUTPUT => true,
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -703,8 +703,8 @@ begin
   u_fc_sine_lut : sine_lut
     generic map
     (
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -728,8 +728,8 @@ begin
   u_fc_cos_lut : sine_lut
     generic map
     (
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -782,8 +782,8 @@ begin
       G_INTEGER_BITS  => 25,
       G_FRACT_BITS    => 17,
       G_SIGNED_OUTPUT => true,
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -811,8 +811,8 @@ begin
   u_alpha2_sine_lut : sine_lut
     generic map
     (
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -836,8 +836,8 @@ begin
   u_alpha2_cos_lut : sine_lut
     generic map
     (
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -950,8 +950,8 @@ begin
   u_beta_times_gauss : floating_point_mult
     generic map
     (
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -1077,7 +1077,7 @@ begin
 
       dout            => open,
       dout_valid      => open,
-      dout_ready      => '1',
+      dout_ready      => dout_ready,
       dout_last       => open
     );
 
