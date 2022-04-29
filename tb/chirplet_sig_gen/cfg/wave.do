@@ -1,20 +1,18 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
-add wave -noupdate -radix hexadecimal /tb_chirplet_sig_gen/u_dut/time_sec
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_time_next/clk
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/first_samp
-add wave -noupdate -radix hexadecimal /tb_chirplet_sig_gen/u_dut/u_time_next/din1
-add wave -noupdate -radix hexadecimal /tb_chirplet_sig_gen/u_dut/u_time_next/din2
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_time_next/din_valid
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_time_next/din_ready
-add wave -noupdate -radix hexadecimal /tb_chirplet_sig_gen/u_dut/u_time_next/dout
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_time_next/dout_valid
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_time_next/dout_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/din
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/din_valid
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/din_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/din_last
+add wave -noupdate -format Analog-Step -height 84 -max 87.000000000000014 -min -88.0 -radix decimal /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/dout
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/dout_valid
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/dout_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/dout_last
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {2035837 ps} 0}
+WaveRestoreCursors {{Cursor 1} {92420000 ps} 0}
 quietly wave cursor active 1
 configure wave -namecolwidth 150
-configure wave -valuecolwidth 148
+configure wave -valuecolwidth 100
 configure wave -justifyvalue left
 configure wave -signalnamewidth 1
 configure wave -snapdistance 10
@@ -27,4 +25,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {1982695 ps} {2151383 ps}
+WaveRestoreZoom {1178094 ps} {6149651 ps}

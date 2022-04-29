@@ -242,29 +242,6 @@ architecture behavioral of tb_chirplet_sig_gen is
 
   end procedure;
 
-  component exponential_lut is
-    generic
-    (
-      G_BUFFER_INPUT  : boolean := false;
-      G_BUFFER_OUTPUT : boolean := false
-    );
-    port
-    (
-      clk             : in std_logic;
-      reset           : in std_logic;
-      enable          : in std_logic;
-
-      din             : in  std_logic_vector(15 downto 0);
-      din_valid       : in  std_logic;
-      din_ready       : out std_logic;
-      din_last        : in  std_logic;
-
-      dout            : out std_logic_vector(31 downto 0);
-      dout_valid      : out std_logic;
-      dout_ready      : in  std_logic;
-      dout_last       : out std_logic
-    );
-  end component;
 
   component chirplet_gen is
     port
@@ -272,14 +249,18 @@ architecture behavioral of tb_chirplet_sig_gen is
       clk             : in std_logic;
       reset           : in std_logic;
       enable          : in std_logic;
-
+  
       din_tau         : in  std_logic_vector(31 downto 0); -- floating point
       din_t_step      : in  std_logic_vector(31 downto 0); -- floating point
       din_alpha1      : in  std_logic_vector(31 downto 0); -- floating point
+      din_f_c         : in  std_logic_vector(31 downto 0); -- floating point
+      din_alpha2      : in  std_logic_vector(31 downto 0); -- floating point
+      din_phi         : in  std_logic_vector(31 downto 0); -- floating point
+      din_beta        : in  std_logic_vector(31 downto 0); -- floating point
       din_valid       : in  std_logic;
       din_ready       : out std_logic;
       din_last        : in  std_logic;
-
+  
       dout            : out std_logic_vector(31 downto 0);
       dout_valid      : out std_logic;
       dout_ready      : in  std_logic;
@@ -301,6 +282,10 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal time_step        : std_logic_vector(31 downto 0);
   signal tau              : std_logic_vector(31 downto 0);
   signal alpha1           : std_logic_vector(31 downto 0);
+  signal f_c              : std_logic_vector(31 downto 0);
+  signal alpha2           : std_logic_vector(31 downto 0);
+  signal phi              : std_logic_vector(31 downto 0);
+  signal beta             : std_logic_vector(31 downto 0);
 
   signal dut_din          : std_logic_vector(C_AWIDTH-1 downto 0);
   signal dut_din_integer  : integer := 0;
@@ -316,10 +301,35 @@ architecture behavioral of tb_chirplet_sig_gen is
   signal din_valid_rand   : std_logic;
   signal dout_ready_rand  : std_logic;
 
-  signal stream_log_data        : std_logic_vector(31 downto 0);
-  signal stream_log_data_valid  : std_logic;
-  signal stream_log_data_ready  : std_logic;
-  signal stream_log_data_last   : std_logic;
+  signal stream_log1_data        : std_logic_vector(31 downto 0);
+  signal stream_log1_data_valid  : std_logic;
+  signal stream_log1_data_ready  : std_logic;
+  signal stream_log1_data_last   : std_logic;
+
+  signal stream_log2_data        : std_logic_vector(31 downto 0);
+  signal stream_log2_data_valid  : std_logic;
+  signal stream_log2_data_ready  : std_logic;
+  signal stream_log2_data_last   : std_logic;
+
+  signal stream_log3_data        : std_logic_vector(31 downto 0);
+  signal stream_log3_data_valid  : std_logic;
+  signal stream_log3_data_ready  : std_logic;
+  signal stream_log3_data_last   : std_logic;
+
+  signal stream_log4_data        : std_logic_vector(31 downto 0);
+  signal stream_log4_data_valid  : std_logic;
+  signal stream_log4_data_ready  : std_logic;
+  signal stream_log4_data_last   : std_logic;
+
+  signal stream_log5_data        : std_logic_vector(31 downto 0);
+  signal stream_log5_data_valid  : std_logic;
+  signal stream_log5_data_ready  : std_logic;
+  signal stream_log5_data_last   : std_logic;
+
+  signal stream_log6_data        : std_logic_vector(31 downto 0);
+  signal stream_log6_data_valid  : std_logic;
+  signal stream_log6_data_ready  : std_logic;
+  signal stream_log6_data_last   : std_logic;
 
 begin
 
@@ -361,6 +371,26 @@ begin
       read(file_ptr, v_char_buffer);
       alpha1(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
     end loop;
+
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      f_c(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      alpha2(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      phi(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      beta(i*8+8-1 downto i*8) <= std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
     file_close(file_ptr);
 
 
@@ -370,6 +400,8 @@ begin
     dut_enable  <= '1';
 
     wait until rising_edge(clk);
+
+    din_valid_main  <= '1';
 
     --generate_axi_stream
     --(
@@ -416,46 +448,159 @@ begin
     end if;
   end process;
 
-
-  stream_log_data       <= << signal u_dut.exp_lut_dout             : std_logic_vector(31 downto 0) >>;
-  stream_log_data_valid <= << signal u_dut.exp_lut_dout_valid       : std_logic >>;
-  stream_log_data_ready <= << signal u_dut.exp_lut_dout_ready       : std_logic >>;
-  stream_log_data_last  <= '0';
-
-  --stream_log_data       <= << signal u_dut.t_minus_tau            : std_logic_vector(31 downto 0) >>;
-  --stream_log_data_valid <= << signal u_dut.t_minus_tau_dout_valid : std_logic >>;
-  --stream_log_data_ready <= << signal u_dut.t_minus_tau_dout_ready : std_logic >>;
-  --stream_log_data_last  <= '0';
+  stream_log1_data       <= << signal u_dut.fc_times_phi_real     : std_logic_vector(31 downto 0) >>;
+  stream_log1_data_valid <= << signal u_dut.final_mult_din_valid  : std_logic >>;
+  stream_log1_data_ready <= << signal u_dut.final_mult_din_ready  : std_logic >>;
+  stream_log1_data_last  <= '0';
 
 
-  p_log_output : process
+  stream_log2_data       <= << signal u_dut.fc_times_phi_imag     : std_logic_vector(31 downto 0) >>;
+  stream_log2_data_valid <= << signal u_dut.final_mult_din_valid  : std_logic >>;
+  stream_log2_data_ready <= << signal u_dut.final_mult_din_ready  : std_logic >>;
+  stream_log2_data_last  <= '0';
+
+
+  stream_log3_data       <= << signal u_dut.alpha2_times_gauss_real : std_logic_vector(31 downto 0) >>;
+  stream_log3_data_valid <= << signal u_dut.final_mult_din_valid    : std_logic >>;
+  stream_log3_data_ready <= << signal u_dut.final_mult_din_ready    : std_logic >>;
+  stream_log3_data_last  <= '0';
+
+
+  stream_log4_data       <= << signal u_dut.alpha2_times_gauss_imag : std_logic_vector(31 downto 0) >>;
+  stream_log4_data_valid <= << signal u_dut.final_mult_din_valid    : std_logic >>;
+  stream_log4_data_ready <= << signal u_dut.final_mult_din_ready    : std_logic >>;
+  stream_log4_data_last  <= '0';
+
+
+  stream_log5_data       <= << signal u_dut.final_mult_real       : std_logic_vector(31 downto 0) >>;
+  stream_log5_data_valid <= << signal u_dut.final_mult_dout_valid : std_logic >>;
+  stream_log5_data_ready <= << signal u_dut.final_mult_dout_ready : std_logic >>;
+  stream_log5_data_last  <= '0';
+
+
+  stream_log6_data       <= << signal u_dut.final_mult_imag       : std_logic_vector(31 downto 0) >>;
+  stream_log6_data_valid <= << signal u_dut.final_mult_dout_valid : std_logic >>;
+  stream_log6_data_ready <= << signal u_dut.final_mult_dout_ready : std_logic >>;
+  stream_log6_data_last  <= '0';
+
+  p_log1_output : process
   begin
-    --log_axi_stream
-    --(
-    --  G_OUTPUT_FNAME,
-    --  100,
-    --  0,
-    --  clk,
-    --  stream_log_data,
-    --  stream_log_data_valid,
-    --  stream_log_data_ready,
-    --  stream_log_data_last
-    --);
 
     log_bin_axi_stream
     (
-      G_OUTPUT_FNAME,
-      100000,
+      G_OUTPUT_FNAME & "fc_times_phi_real.bin",
+      10000,
       4,
       clk,
-      stream_log_data,
-      stream_log_data_valid,
-      stream_log_data_ready,
-      stream_log_data_last
+      stream_log1_data,
+      stream_log1_data_valid,
+      stream_log1_data_ready,
+      stream_log1_data_last
+    );
+  
+    wait for C_CLK_PERIOD*10;
+    wait;
+    --report "simulation finished" severity failure;
+  end process;
+
+  p_log2_output : process
+  begin
+
+    log_bin_axi_stream
+    (
+      G_OUTPUT_FNAME & "fc_times_phi_imag.bin",
+      10000,
+      4,
+      clk,
+      stream_log2_data,
+      stream_log2_data_valid,
+      stream_log2_data_ready,
+      stream_log2_data_last
+    );
+  
+    wait for C_CLK_PERIOD*10;
+    wait;
+    --report "simulation finished" severity failure;
+  end process;
+
+  p_log3_output : process
+  begin
+
+    log_bin_axi_stream
+    (
+      G_OUTPUT_FNAME & "alpha2_times_gauss_real.bin",
+      10000,
+      4,
+      clk,
+      stream_log3_data,
+      stream_log3_data_valid,
+      stream_log3_data_ready,
+      stream_log3_data_last
+    );
+  
+    wait for C_CLK_PERIOD*10;
+    wait;
+    --report "simulation finished" severity failure;
+  end process;
+
+  p_log4_output : process
+  begin
+
+    log_bin_axi_stream
+    (
+      G_OUTPUT_FNAME & "alpha2_times_gauss_imag.bin",
+      10000,
+      4,
+      clk,
+      stream_log4_data,
+      stream_log4_data_valid,
+      stream_log4_data_ready,
+      stream_log4_data_last
+    );
+  
+    wait for C_CLK_PERIOD*10;
+    wait;
+    --report "simulation finished" severity failure;
+  end process;
+
+  p_log5_output : process
+  begin
+
+    log_bin_axi_stream
+    (
+      G_OUTPUT_FNAME & "final_mult_real.bin",
+      10000,
+      4,
+      clk,
+      stream_log5_data,
+      stream_log5_data_valid,
+      stream_log5_data_ready,
+      stream_log5_data_last
+    );
+  
+    wait for C_CLK_PERIOD*10;
+    wait;
+    --report "simulation finished" severity failure;
+  end process;
+
+  p_log6_output : process
+  begin
+
+    log_bin_axi_stream
+    (
+      G_OUTPUT_FNAME & "final_mult_imag.bin",
+      10000,
+      4,
+      clk,
+      stream_log6_data,
+      stream_log6_data_valid,
+      stream_log6_data_ready,
+      stream_log6_data_last
     );
   
     wait for C_CLK_PERIOD*10;
     report "simulation finished" severity failure;
+    wait;
   end process;
 
   p_input_output_counter : process(clk)
@@ -487,14 +632,18 @@ begin
       clk             => clk,
       reset           => dut_reset,
       enable          => dut_enable,
-
-      din_tau         => tau,--x"40000000", -- 2.0
-      din_t_step      => time_step,--x"3dcccccd", -- 0.1
+  
+      din_tau         => tau,
+      din_t_step      => time_step,
       din_alpha1      => alpha1,
-      din_valid       => '1',
+      din_f_c         => f_c,
+      din_alpha2      => alpha2,
+      din_phi         => phi,
+      din_beta        => beta,
+      din_valid       => dut_din_valid,
       din_ready       => open,
       din_last        => '0',
-
+  
       dout            => open,
       dout_valid      => open,
       dout_ready      => '1',

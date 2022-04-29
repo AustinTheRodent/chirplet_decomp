@@ -14,10 +14,15 @@ rand_seed=`date +%s`
 echo rand_seed: $rand_seed
 
 time_step=0.00000001
-tau=0.0005
-alpha1=20000000
+tau=0.00005
+alpha1=1000000000
+f_c=1000000
+alpha2=10000000000
+phi=0
+beta=0.5
+
 input_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
-output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/output.bin"
+output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/"
 num_samps=10000
 
 main_arg="none"
@@ -87,10 +92,10 @@ if [ $main_arg == "clean" ];then
   make clean -C $TULIP_WIN/fpga_builds/tb/${sim_name}/c_code
   cd $TULIP_WIN/fpga_builds/tb/${sim_name}
   echo $TULIP_WIN/fpga_builds/tb/${sim_name}
-  mv readme.txt readme.bak
+  #mv readme.txt readme.bak
   find . -maxdepth 1 -type f -name '*.txt' -delete
   find . -maxdepth 1 -type f -name '*.bin' -delete
-  mv readme.bak readme.txt
+  #mv readme.bak readme.txt
   cd $TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output
   find . -maxdepth 1 -type f -name '*.txt' -delete
   find . -maxdepth 1 -type f -name '*.bin' -delete
@@ -116,6 +121,10 @@ if [ $main_arg == "all" ] || [ $main_arg == "hw" ] || [ $main_arg == "sw" ] || [
   echo $time_step > $input_fname
   echo $tau >> $input_fname
   echo $alpha1 >> $input_fname
+  echo $f_c >> $input_fname
+  echo $alpha2 >> $input_fname
+  echo $phi >> $input_fname
+  echo $beta >> $input_fname
 
   $script_dir/c_code/bin/txt_to_bin \
     -i $input_fname \
