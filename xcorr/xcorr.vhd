@@ -44,9 +44,9 @@ signal sigimag: arraysignal;
 signal partialsum: outputbuffer := (others=>(others=>'0'));
 signal partialsumimag: outputbuffer := (others=>(others=>'0'));
 
-signal state: integer:= 0;
-signal finaladditionstate: integer:=0;
-signal siginstate: integer:= 0;
+signal state: unsigned(23 downto 0):= to_unsigned(0,24);
+signal finaladditionstate: unsigned(3 downto 0):=to_unsigned(0,4);
+signal siginstate: unsigned(23 downto 0):= to_unsigned(0,24);
 signal done: std_logic:='0';
     
 begin
@@ -56,15 +56,15 @@ begin
     if rising_edge(clk) and chirpvalid='1' then -- add chirplet from axi port to partial convolution buffer
       if state/=1562 and state/=1563 then
         for j in 0 to 63 loop 
-          partialsum(j) <= partialsum(j) + sig(state*64+j) * signed(inputchirp(16*j to 16*j+15)) + sigimag(state*64+j) * signed(inputchirpimag(16*j to 16*j+15));
-          partialsumimag(j) <= partialsumimag(j) + sigimag(state*64+j) * signed(inputchirp(16*j to 16*j+15)) - sig(state*64+j) * signed(inputchirpimag(16*j to 16*j+15));
+          partialsum(j) <= partialsum(j) + sig(to_integer(state&to_unsigned(j,6))) * signed(inputchirp(16*j to 16*j+15)) + sigimag(to_integer(state&to_unsigned(j,6))) * signed(inputchirpimag(16*j to 16*j+15));
+          partialsumimag(j) <= partialsumimag(j) + sigimag(to_integer(state&to_unsigned(j,6))) * signed(inputchirp(16*j to 16*j+15)) - sig(to_integer(state&to_unsigned(j,6))) * signed(inputchirpimag(16*j to 16*j+15));
         end loop;
         state <=state+1;
       end if;
       if state=1562 then
         for j in 0 to 32 loop 
-          partialsum(j) <= partialsum(j) + sig(state*64+j) * signed(inputchirp(16*j to 16*j+15)) + sigimag(state*64+j) * signed(inputchirpimag(16*j to 16*j+15));
-          partialsumimag(j) <= partialsumimag(j) + sigimag(state*64+j) * signed(inputchirp(16*j to 16*j+15)) - sig(state*64+j) * signed(inputchirpimag(16*j to 16*j+15));
+          partialsum(j) <= partialsum(j) + sig(to_integer(state&to_unsigned(j,6))) * signed(inputchirp(16*j to 16*j+15)) + sigimag(to_integer(state&to_unsigned(j,6))) * signed(inputchirpimag(16*j to 16*j+15));
+          partialsumimag(j) <= partialsumimag(j) + sigimag(to_integer(state&to_unsigned(j,6))) * signed(inputchirp(16*j to 16*j+15)) - sig(to_integer(state&to_unsigned(j,6))) * signed(inputchirpimag(16*j to 16*j+15));
         end loop;
         state <=state+1;
       end if;
@@ -73,18 +73,18 @@ begin
     if rising_edge(clk) and signalvalid='1' then -- store signal
       if siginstate/=1562 and siginstate/=1563 then
         for j in 0 to 63 loop
-          sig(siginstate*64+j) <= signed(inputsignal(16*j to 16*j+15));
-          sigimag(siginstate*64+j) <= signed(inputsignalimag(16*j to 16*j+15));
+          sig(to_integer(siginstate&to_unsigned(j,6))) <= signed(inputsignal(16*j to 16*j+15));
+          sigimag(to_integer(siginstate&to_unsigned(j,6))) <= signed(inputsignalimag(16*j to 16*j+15));
         end loop;
       end if;
       if siginstate=1562 then
         for j in 0 to 32 loop
-          sig(siginstate*64+j) <= signed(inputsignal(16*j to 16*j+15));
-          sigimag(siginstate*64+j) <= signed(inputsignalimag(16*j to 16*j+15));
+          sig(to_integer(siginstate&to_unsigned(j,6))) <= signed(inputsignal(16*j to 16*j+15));
+          sigimag(to_integer(siginstate&to_unsigned(j,6))) <= signed(inputsignalimag(16*j to 16*j+15));
         end loop;
       end if;
       if siginstate=1563 then
-        siginstate<=0;
+        siginstate<=to_unsigned(0,24);
       else
         siginstate <= siginstate+1;
       end if;
@@ -100,11 +100,11 @@ begin
       elsif state=1563 then
         if done='1' then
           done<='0';
-          state<=0;
-          finaladditionstate<=0;
+          state<=to_unsigned(0,24);
+          finaladditionstate<=to_unsigned(0,4);
           for j in 0 to 63 loop
-            partialsum(j) <="000000000000000000000000000000000000000000000000";
-            partialsumimag(j) <="000000000000000000000000000000000000000000000000";
+            partialsum(j) <=to_signed(0,48);
+            partialsumimag(j) <=to_signed(0,48);
           end loop;
         else
           done<='1';
