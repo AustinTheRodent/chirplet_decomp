@@ -12,7 +12,7 @@ phi = pi/2;
 single_sig= signal_creation(beta1,tau,f_c,alpha1,alpha2,phi,t);
 %plot(real(single_sig))
 %plot(real(single_sig));
-with_noise = awgn(single_sig,20);
+with_noise = awgn(single_sig,10);
 fc = 100000;
 [b,a] = butter(6,fc/(fs/2));
 dataOut = filter(b,a,with_noise);
@@ -21,7 +21,7 @@ dataOut = filter(b,a,with_noise);
 
 [peak_value,indx] = max(with_noise);
 cutted_sig = zeros(1,100001);
-cutted_sig (indx-1900:indx+2000)= with_noise (indx-1900:indx+2000);
+cutted_sig (indx-190:indx+200)= with_noise (indx-190:indx+200);
 beta_ = abs(peak_value);
 %plot(real(cutted_sig));
 [tau_,f_c_]=find_tauandfc(indx,fs,t,beta_,cutted_sig);

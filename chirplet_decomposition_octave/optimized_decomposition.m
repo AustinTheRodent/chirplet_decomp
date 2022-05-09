@@ -1,11 +1,11 @@
 pkg load communications
 
-fs =1e8;
-t = 0:1/fs:10e-6;
+fs =100e6;
+t = 0:1/fs:10e-4;
 beta1 = 1;
 alpha1 = 25e12;
 alpha2 = 15e12;
-tau =2e-6;
+tau =2e-4;
 f_c = 5e6;
 phi = pi/2;
 %chirplet sginal kernel
@@ -14,7 +14,7 @@ plot(real(sig1))
 beta2 = -0.7;
 alpha1 = 25e12;
 alpha2 = 15e12;
-tau = 2.5e-6;
+tau = 2.5e-4;
 f_c = 5.2e6;
 phi = pi/2;
 sig2= signal_creation(beta2,tau,f_c,alpha1,alpha2,phi,t);
@@ -22,14 +22,14 @@ plot(real(sig2))
 beta3= 1.5
 alpha1 = 25e12;
 alpha2 = 15e12;
-tau = 2.8e-6;
+tau = 2.8e-4;
 f_c = 5.1e6;
 phi = pi/2*0.8;
 sig3= signal_creation(beta3,tau,f_c,alpha1,alpha2,phi,t);
 single_sig = sig1+sig2+sig3;
 plot(real(single_sig));
 with_noise = awgn(single_sig,30);
-fc = 10000000;
+fc = 100000;
 [b,a] = butter(6,fc/(fs/2));
 dataOut = filter(b,a,with_noise);
 plot(real(with_noise));
@@ -38,7 +38,7 @@ hold on
 %%
 [peak_value,indx] = max(with_noise);
 cutted_sig = zeros(1,100001);
-cutted_sig (indx-1900:indx+2000)= with_noise (indx-1900:indx+2000);
+cutted_sig (indx-190:indx+200)= with_noise (indx-190:indx+200);
 beta_ = abs(peak_value);
 plot(real(cutted_sig));
 [tau_,f_c_]=find_tauandfc(indx,fs,t,beta_,cutted_sig);
@@ -53,7 +53,7 @@ plot((real(with_noise1)))
 %%
 [peak_value,indx] = max(with_noise1);
 cutted_sig = zeros(1,100001);
-cutted_sig (indx-1900:indx+2100)= with_noise1 (indx-1900:indx+2100);
+cutted_sig (indx-190:indx+210)= with_noise1 (indx-190:indx+210);
 beta_ = abs(peak_value);
 plot(real(cutted_sig));
 [tau_,f_c_]=find_tauandfc(indx,fs,t,beta_,cutted_sig);
@@ -69,7 +69,7 @@ plot((real(with_noise2)))
 %%
 [peak_value,indx] = max(with_noise2);
 cutted_sig = zeros(1,100001);
-cutted_sig (indx-1900:indx+2100)= with_noise2 (indx-1900:indx+2100);
+cutted_sig (indx-190:indx+210)= with_noise2 (indx-190:indx+210);
 beta_ = abs(peak_value);
 plot(real(cutted_sig));
 [tau_,f_c_]=find_tauandfc(indx,fs,t,beta_,cutted_sig);
@@ -83,7 +83,7 @@ plot((real(with_noise3)))
 %%
 [peak_value,indx] = max(with_noise3);
 cutted_sig = zeros(1,100001);
-cutted_sig (indx-1900:indx+2100)= with_noise3 (indx-1900:indx+2100);
+cutted_sig (indx-190:indx+210)= with_noise3 (indx-190:indx+210);
 beta_ = abs(peak_value);
 plot(real(cutted_sig));
 [tau_,f_c_]=find_tauandfc(indx,fs,t,beta_,cutted_sig);
