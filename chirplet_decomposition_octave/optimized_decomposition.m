@@ -1,6 +1,6 @@
 pkg load communications
 
-fs =100e8;
+fs =1e8;
 t = 0:1/fs:10e-6;
 beta1 = 1;
 alpha1 = 25e12;

@@ -1,19 +1,19 @@
 pkg load communications
 
-fs =100e8;
-t = 0:1/fs:10e-6;
+fs =100e6;
+t = 0:1/fs:10e-4;
 beta1 = 1;
 alpha1 = 25e12;
 alpha2 = 15e12;
-tau =2e-6;
+tau =2e-4;
 f_c = 5e6;
 phi = pi/2;
 %chirplet sginal kernel
 single_sig= signal_creation(beta1,tau,f_c,alpha1,alpha2,phi,t);
 %plot(real(single_sig))
 %plot(real(single_sig));
-with_noise = awgn(single_sig,10);
-fc = 10000000;
+with_noise = awgn(single_sig,20);
+fc = 100000;
 [b,a] = butter(6,fc/(fs/2));
 dataOut = filter(b,a,with_noise);
 %plot(real(with_noise));
