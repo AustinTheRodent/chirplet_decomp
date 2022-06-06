@@ -17,6 +17,7 @@ entity tb_chirplet_sig_gen is
     G_VLD_COEFF         : real                  := 0.5;
     G_RDY_COEFF         : real                  := 0.5;
     G_RAND_SEED         : integer               := 0;
+    G_SAMPS_TO_CAPTURE  : integer               := 0;
     G_INPUT_FNAME       : string                := "";
     G_OUTPUT_FNAME      : string                := ""
   );
@@ -268,8 +269,6 @@ architecture behavioral of tb_chirplet_sig_gen is
     );
   end component;
 
-  constant C_SAMPS_TO_CAPTURE : integer := 10000;
-
   constant C_CLK_PERIOD   : time    := 20 ns; -- 50MHz
   constant C_DWIDTH       : integer := 32;
   constant C_AWIDTH       : integer := 16;
@@ -450,120 +449,120 @@ begin
     end if;
   end process;
 
-  stream_log1_data       <= << signal u_dut.fc_times_phi_real     : std_logic_vector(31 downto 0) >>;
-  stream_log1_data_valid <= << signal u_dut.final_mult_din_valid  : std_logic >>;
-  stream_log1_data_ready <= << signal u_dut.final_mult_din_ready  : std_logic >>;
-  stream_log1_data_last  <= '0';
+  --stream_log1_data       <= << signal u_dut.fc_times_phi_real     : std_logic_vector(31 downto 0) >>;
+  --stream_log1_data_valid <= << signal u_dut.final_mult_din_valid  : std_logic >>;
+  --stream_log1_data_ready <= << signal u_dut.final_mult_din_ready  : std_logic >>;
+  --stream_log1_data_last  <= '0';
+  --
+  --
+  --stream_log2_data       <= << signal u_dut.fc_times_phi_imag     : std_logic_vector(31 downto 0) >>;
+  --stream_log2_data_valid <= << signal u_dut.final_mult_din_valid  : std_logic >>;
+  --stream_log2_data_ready <= << signal u_dut.final_mult_din_ready  : std_logic >>;
+  --stream_log2_data_last  <= '0';
+  --
+  --
+  --stream_log3_data       <= << signal u_dut.alpha2_times_gauss_real : std_logic_vector(31 downto 0) >>;
+  --stream_log3_data_valid <= << signal u_dut.final_mult_din_valid    : std_logic >>;
+  --stream_log3_data_ready <= << signal u_dut.final_mult_din_ready    : std_logic >>;
+  --stream_log3_data_last  <= '0';
+  --
+  --
+  --stream_log4_data       <= << signal u_dut.alpha2_times_gauss_imag : std_logic_vector(31 downto 0) >>;
+  --stream_log4_data_valid <= << signal u_dut.final_mult_din_valid    : std_logic >>;
+  --stream_log4_data_ready <= << signal u_dut.final_mult_din_ready    : std_logic >>;
+  --stream_log4_data_last  <= '0';
 
 
-  stream_log2_data       <= << signal u_dut.fc_times_phi_imag     : std_logic_vector(31 downto 0) >>;
-  stream_log2_data_valid <= << signal u_dut.final_mult_din_valid  : std_logic >>;
-  stream_log2_data_ready <= << signal u_dut.final_mult_din_ready  : std_logic >>;
-  stream_log2_data_last  <= '0';
-
-
-  stream_log3_data       <= << signal u_dut.alpha2_times_gauss_real : std_logic_vector(31 downto 0) >>;
-  stream_log3_data_valid <= << signal u_dut.final_mult_din_valid    : std_logic >>;
-  stream_log3_data_ready <= << signal u_dut.final_mult_din_ready    : std_logic >>;
-  stream_log3_data_last  <= '0';
-
-
-  stream_log4_data       <= << signal u_dut.alpha2_times_gauss_imag : std_logic_vector(31 downto 0) >>;
-  stream_log4_data_valid <= << signal u_dut.final_mult_din_valid    : std_logic >>;
-  stream_log4_data_ready <= << signal u_dut.final_mult_din_ready    : std_logic >>;
-  stream_log4_data_last  <= '0';
-
-
-  stream_log5_data       <= << signal u_dut.final_mult_real       : std_logic_vector(31 downto 0) >>;
-  stream_log5_data_valid <= << signal u_dut.final_mult_dout_valid : std_logic >>;
-  stream_log5_data_ready <= << signal u_dut.final_mult_dout_ready : std_logic >>;
+  stream_log5_data       <= << signal u_dut.complex_mult_real       : std_logic_vector(31 downto 0) >>;
+  stream_log5_data_valid <= << signal u_dut.complex_mult_dout_valid : std_logic >>;
+  stream_log5_data_ready <= << signal u_dut.complex_mult_dout_ready : std_logic >>;
   stream_log5_data_last  <= '0';
 
 
-  stream_log6_data       <= << signal u_dut.final_mult_imag       : std_logic_vector(31 downto 0) >>;
-  stream_log6_data_valid <= << signal u_dut.final_mult_dout_valid : std_logic >>;
-  stream_log6_data_ready <= << signal u_dut.final_mult_dout_ready : std_logic >>;
+  stream_log6_data       <= << signal u_dut.complex_mult_imag       : std_logic_vector(31 downto 0) >>;
+  stream_log6_data_valid <= << signal u_dut.complex_mult_dout_valid : std_logic >>;
+  stream_log6_data_ready <= << signal u_dut.complex_mult_dout_ready : std_logic >>;
   stream_log6_data_last  <= '0';
 
-  p_log1_output : process
-  begin
-
-    log_bin_axi_stream
-    (
-      G_OUTPUT_FNAME & "fc_times_phi_real.bin",
-      C_SAMPS_TO_CAPTURE,
-      4,
-      clk,
-      stream_log1_data,
-      stream_log1_data_valid,
-      stream_log1_data_ready,
-      stream_log1_data_last
-    );
-  
-    wait for C_CLK_PERIOD*10;
-    wait;
-    --report "simulation finished" severity failure;
-  end process;
-
-  p_log2_output : process
-  begin
-
-    log_bin_axi_stream
-    (
-      G_OUTPUT_FNAME & "fc_times_phi_imag.bin",
-      C_SAMPS_TO_CAPTURE,
-      4,
-      clk,
-      stream_log2_data,
-      stream_log2_data_valid,
-      stream_log2_data_ready,
-      stream_log2_data_last
-    );
-  
-    wait for C_CLK_PERIOD*10;
-    wait;
-    --report "simulation finished" severity failure;
-  end process;
-
-  p_log3_output : process
-  begin
-
-    log_bin_axi_stream
-    (
-      G_OUTPUT_FNAME & "alpha2_times_gauss_real.bin",
-      C_SAMPS_TO_CAPTURE,
-      4,
-      clk,
-      stream_log3_data,
-      stream_log3_data_valid,
-      stream_log3_data_ready,
-      stream_log3_data_last
-    );
-  
-    wait for C_CLK_PERIOD*10;
-    wait;
-    --report "simulation finished" severity failure;
-  end process;
-
-  p_log4_output : process
-  begin
-
-    log_bin_axi_stream
-    (
-      G_OUTPUT_FNAME & "alpha2_times_gauss_imag.bin",
-      C_SAMPS_TO_CAPTURE,
-      4,
-      clk,
-      stream_log4_data,
-      stream_log4_data_valid,
-      stream_log4_data_ready,
-      stream_log4_data_last
-    );
-  
-    wait for C_CLK_PERIOD*10;
-    wait;
-    --report "simulation finished" severity failure;
-  end process;
+  --p_log1_output : process
+  --begin
+  --
+  --  log_bin_axi_stream
+  --  (
+  --    G_OUTPUT_FNAME & "fc_times_phi_real.bin",
+  --    G_SAMPS_TO_CAPTURE,
+  --    4,
+  --    clk,
+  --    stream_log1_data,
+  --    stream_log1_data_valid,
+  --    stream_log1_data_ready,
+  --    stream_log1_data_last
+  --  );
+  --
+  --  wait for C_CLK_PERIOD*10;
+  --  wait;
+  --  --report "simulation finished" severity failure;
+  --end process;
+  --
+  --p_log2_output : process
+  --begin
+  --
+  --  log_bin_axi_stream
+  --  (
+  --    G_OUTPUT_FNAME & "fc_times_phi_imag.bin",
+  --    G_SAMPS_TO_CAPTURE,
+  --    4,
+  --    clk,
+  --    stream_log2_data,
+  --    stream_log2_data_valid,
+  --    stream_log2_data_ready,
+  --    stream_log2_data_last
+  --  );
+  --
+  --  wait for C_CLK_PERIOD*10;
+  --  wait;
+  --  --report "simulation finished" severity failure;
+  --end process;
+  --
+  --p_log3_output : process
+  --begin
+  --
+  --  log_bin_axi_stream
+  --  (
+  --    G_OUTPUT_FNAME & "alpha2_times_gauss_real.bin",
+  --    G_SAMPS_TO_CAPTURE,
+  --    4,
+  --    clk,
+  --    stream_log3_data,
+  --    stream_log3_data_valid,
+  --    stream_log3_data_ready,
+  --    stream_log3_data_last
+  --  );
+  --
+  --  wait for C_CLK_PERIOD*10;
+  --  wait;
+  --  --report "simulation finished" severity failure;
+  --end process;
+  --
+  --p_log4_output : process
+  --begin
+  --
+  --  log_bin_axi_stream
+  --  (
+  --    G_OUTPUT_FNAME & "alpha2_times_gauss_imag.bin",
+  --    G_SAMPS_TO_CAPTURE,
+  --    4,
+  --    clk,
+  --    stream_log4_data,
+  --    stream_log4_data_valid,
+  --    stream_log4_data_ready,
+  --    stream_log4_data_last
+  --  );
+  --
+  --  wait for C_CLK_PERIOD*10;
+  --  wait;
+  --  --report "simulation finished" severity failure;
+  --end process;
 
   p_log5_output : process
   begin
@@ -571,7 +570,7 @@ begin
     log_bin_axi_stream
     (
       G_OUTPUT_FNAME & "final_mult_real.bin",
-      C_SAMPS_TO_CAPTURE,
+      G_SAMPS_TO_CAPTURE,
       4,
       clk,
       stream_log5_data,
@@ -591,7 +590,7 @@ begin
     log_bin_axi_stream
     (
       G_OUTPUT_FNAME & "final_mult_imag.bin",
-      C_SAMPS_TO_CAPTURE,
+      G_SAMPS_TO_CAPTURE,
       4,
       clk,
       stream_log6_data,
