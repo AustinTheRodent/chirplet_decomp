@@ -1,17 +1,25 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/din
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/din_valid
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/din_ready
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/din_last
-add wave -noupdate -format Analog-Step -height 84 -max 87.000000000000014 -min -88.0 -radix decimal /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/dout
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/dout_valid
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/dout_ready
-add wave -noupdate /tb_chirplet_sig_gen/u_dut/u_final_real_fixed/dout_last
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_minus_tau_sqr_dout_valid
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_minus_tau_sqr_dout_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_minus_tau_sqr_din_valid
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_minus_tau_sqr_din_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_minus_tau_dout_valid
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_minus_tau_dout_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_minus_tau_sqr_din_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_m_tau_times_fc_din_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_m_tau_times_fc_dout_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/t_m_tau_times_fc_fixed_dout_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/fc_sine_lut_dout_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/phi_sine_lut_dout_valid
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/fc_sine_lut_dout_valid
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/fc_times_phi_din_ready
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/alpha2_times_gauss_dout_valid
+add wave -noupdate /tb_chirplet_sig_gen/u_dut/clk
 TreeUpdate [SetDefaultTree]
-WaveRestoreCursors {{Cursor 1} {92420000 ps} 0}
+WaveRestoreCursors {{Cursor 1} {2220000 ps} 0}
 quietly wave cursor active 1
-configure wave -namecolwidth 150
+configure wave -namecolwidth 221
 configure wave -valuecolwidth 100
 configure wave -justifyvalue left
 configure wave -signalnamewidth 1
@@ -25,4 +33,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ns
 update
-WaveRestoreZoom {1178094 ps} {6149651 ps}
+WaveRestoreZoom {0 ps} {6531 ns}

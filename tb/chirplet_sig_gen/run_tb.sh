@@ -9,16 +9,16 @@ sim_name="chirplet_sig_gen"
 input_vector_fname=$sim_name"_input.txt"
 
 VLD_COEFF=1.0
-RDY_COEFF=1.0
+RDY_COEFF=0.05
 rand_seed=`date +%s`
 echo rand_seed: $rand_seed
 
 time_step=0.00000001
 tau=0.00005
-alpha1=1000000000
+alpha1=10000000000
 f_c=1000000
 alpha2=10000000000
-phi=0
+phi=0.75
 beta=0.5
 
 input_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
@@ -28,9 +28,9 @@ num_samps=10000
 main_arg="none"
 use_user_input="false"
 usr_file_name="none"
-gui="true"
-gui_sw=""
-verbose="false"
+gui="false"
+gui_sw="-c"
+verbose="true"
 
 args=("$@") 
 for (( i=0;i<${#args[@]};i++)); do
@@ -54,9 +54,9 @@ for (( i=0;i<${#args[@]};i++)); do
     "-onlygen")
       main_arg="onlygen"
       ;;
-    "-nogui")
-      gui="false"
-      gui_sw="-c"
+    "-gui")
+      gui="true"
+      gui_sw=""
       ;;
     "-clean")
       main_arg="clean"
@@ -68,8 +68,8 @@ for (( i=0;i<${#args[@]};i++)); do
     "-n")
       num_samps=${args[${i}+1]}
       ;;
-    "-v")
-      verbose="true"
+    "-q")
+      verbose="false"
       ;;
   esac
 done
@@ -164,6 +164,7 @@ if [ $main_arg == "all" ] || [ $main_arg == "hw" ] || [ $main_arg == "compile" ]
 -g/tb_${sim_name}/G_VLD_COEFF=$VLD_COEFF \
 -g/tb_${sim_name}/G_RDY_COEFF=$RDY_COEFF \
 -g/tb_${sim_name}/G_RAND_SEED=$rand_seed \
+-g/tb_${sim_name}/G_SAMPS_TO_CAPTURE=$num_samps \
 -g/tb_${sim_name}/G_INPUT_FNAME=$input_fname \
 -g/tb_${sim_name}/G_OUTPUT_FNAME=$output_fname \
 "
