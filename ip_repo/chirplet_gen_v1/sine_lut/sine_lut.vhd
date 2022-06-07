@@ -55,17 +55,10 @@ architecture rtl of sine_lut is
     port
     (
       clk           : in  std_logic;
-      address       : in  std_logic_vector(13 downto 0);
+      address       : in  std_logic_vector(15 downto 0);
       data_out      : out std_logic_vector(31 downto 0)
     );
   end component;
-
-  signal din_adjusted           : std_logic_vector(14 downto 0);
-  signal pi_m_theta             : std_logic_vector(15 downto 0);
-  signal theta_m_pi             : std_logic_vector(15 downto 0);
-  signal twopi_m_theta          : std_logic_vector(15 downto 0);
-  signal invert_output          : std_logic;
-  signal invert_output_delay    : std_logic;
 
   signal din_ready_int          : std_logic;
   signal dout_int               : std_logic_vector(31 downto 0);
@@ -100,10 +93,9 @@ architecture rtl of sine_lut is
 
   signal bram_buffer            : std_logic_vector(31 downto 0);
 
-  signal bram_rd_addr           : std_logic_vector(13 downto 0);
-  signal bram_addr              : std_logic_vector(13 downto 0);
+  signal bram_rd_addr           : std_logic_vector(15 downto 0);
+  signal bram_addr              : std_logic_vector(15 downto 0);
   signal bram_dout              : std_logic_vector(31 downto 0);
-  signal bram_adjusted          : std_logic_vector(31 downto 0);
 
 begin
 
@@ -165,7 +157,7 @@ begin
     '0';
 
   output_buff_din <=
-    bram_adjusted when state = use_bram_dout else
+    bram_dout when state = use_bram_dout else
     bram_buffer;
 
   p_din_last_hold : process(clk)
@@ -197,7 +189,7 @@ begin
             end if;
           when use_bram_dout =>
             if dout_accepted = '0' then
-              bram_buffer <= bram_adjusted;
+              bram_buffer <= bram_dout;
               state       <= use_buffer;
             elsif din_accepted = '0' and dout_accepted = '1' then
               state       <= init;
@@ -215,35 +207,8 @@ begin
     end if;
   end process;
 
-  pi_m_theta    <= std_logic_vector(to_unsigned(2**15, 16) - unsigned(input_buff_dout));
-  theta_m_pi    <= std_logic_vector(unsigned(input_buff_dout) - to_unsigned(2**15, 16));
-  twopi_m_theta <= std_logic_vector(to_unsigned(0, 16) - unsigned(input_buff_dout));
-
-  din_adjusted <=
-    input_buff_dout(14 downto 0)  when input_buff_dout(15 downto 14) = "00" else
-    pi_m_theta(14 downto 0)       when input_buff_dout(15 downto 14) = "01" else
-    theta_m_pi(14 downto 0)       when input_buff_dout(15 downto 14) = "10" else
-    twopi_m_theta(14 downto 0);
-
-
-  --bram_rd_addr  <= input_buff_dout;
-  bram_rd_addr  <=
-    (others => '1') when din_adjusted(14) = '1' else
-    din_adjusted(13 downto 0);
+  bram_rd_addr  <= input_buff_dout;
   bram_addr     <= bram_rd_addr;
-
-  invert_output <=
-    '0' when input_buff_dout(15 downto 14) = "00" else
-    '0' when input_buff_dout(15 downto 14) = "01" else
-    '1' when input_buff_dout(15 downto 14) = "01" else
-    '1';
-
-  p_delay_invert_output : process(clk)
-  begin
-    if rising_edge(clk) then
-      invert_output_delay <= invert_output;
-    end if;
-  end process;
 
   u_bram : sine_rom
     port map
@@ -252,8 +217,6 @@ begin
       address   => bram_addr,
       data_out  => bram_dout
     );
-
-  bram_adjusted <= invert_output_delay & bram_dout(30 downto 0);
 
   g_buff_out : if G_BUFFER_OUTPUT = true generate
     u_buff_out : axis_buffer

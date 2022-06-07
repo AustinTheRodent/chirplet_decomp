@@ -75,7 +75,7 @@ architecture rtl of chirplet_gen is
     );
   end component;
 
-  component exponential_lut is
+  component exponential_lut is -- todo: have this lut extend to exp(64) to keep powers of two
     generic
     (
       G_BUFFER_INPUT  : boolean := false;
@@ -202,164 +202,170 @@ architecture rtl of chirplet_gen is
 
 ------------------------------------------------------------------------------
 
-  constant C_LUT_ONE                            : unsigned(17 downto 0) := "10" & x"0000";
+  constant C_LUT_ONE : unsigned(17 downto 0) := "10" & x"0000";
 
 ------------------------------------------------------------------------------
 
-  signal din_beta_store                         : std_logic_vector(31 downto 0);
+  signal din_beta_store : std_logic_vector(31 downto 0);
 
 ------------------------------------------------------------------------------
 
-  signal din_valid_latch                        : std_logic;
-  signal din_ready_int                          : std_logic;
+  signal din_valid_latch : std_logic;
+  signal din_ready_int : std_logic;
 
 ------------------------------------------------------------------------------
 
-  signal first_samp                             : std_logic;
-  signal time_next                              : std_logic_vector(31 downto 0);
-  signal time_next_din_valid                    : std_logic;
-  signal time_next_din_ready                    : std_logic;
-  signal time_next_dout_valid                   : std_logic;
-  signal time_next_dout_ready                   : std_logic;
+  signal first_samp           : std_logic;
+  signal time_sec             : std_logic_vector(31 downto 0);
+  signal time_next            : std_logic_vector(31 downto 0);
+  signal time_next_din_valid  : std_logic;
+  signal time_next_din_ready  : std_logic;
+  signal time_next_dout_valid : std_logic;
+  signal time_next_dout_ready : std_logic;
 
-  signal counter_din1                           : std_logic_vector(31 downto 0);
-  signal counter_din2                           : std_logic_vector(31 downto 0);
-  signal counter_dout                           : std_logic_vector(31 downto 0);
+  signal counter_din1       : std_logic_vector(31 downto 0);
+  signal counter_din2       : std_logic_vector(31 downto 0);
+  signal counter_dout       : std_logic_vector(31 downto 0);
 
-  signal counter_din_valid                      : std_logic;
-  signal counter_din_ready                      : std_logic;
-  signal counter_dout_valid                     : std_logic;
-  signal counter_dout_ready                     : std_logic;
+  signal counter_din_valid  : std_logic;
+  signal counter_din_ready  : std_logic;
+  signal counter_dout_valid  : std_logic;
+  signal counter_dout_ready  : std_logic;
 
-  signal t_minus_tau_din_valid                  : std_logic;
-  signal t_minus_tau_din_ready                  : std_logic;
-  signal t_minus_tau_dout_valid                 : std_logic;
-  signal t_minus_tau_dout_ready                 : std_logic;
+  signal t_minus_tau_din_valid  : std_logic;
+  signal t_minus_tau_din_ready  : std_logic;
+  signal t_minus_tau_dout_valid : std_logic;
+  signal t_minus_tau_dout_ready : std_logic;
 
-  signal t_minus_tau_sqr_din_valid              : std_logic;
-  signal t_minus_tau_sqr_din_ready              : std_logic;
-  signal t_minus_tau_sqr_dout_valid             : std_logic;
-  signal t_minus_tau_sqr_dout_ready             : std_logic;
+  signal t_minus_tau_sqr_din_valid  : std_logic;
+  signal t_minus_tau_sqr_din_ready  : std_logic;
+  signal t_minus_tau_sqr_dout_valid : std_logic;
+  signal t_minus_tau_sqr_dout_ready : std_logic;
 
-  signal t_minus_tau_sqr_alpha_din_valid        : std_logic;
-  signal t_minus_tau_sqr_alpha_din_ready        : std_logic;
-  signal t_minus_tau_sqr_alpha_dout_valid       : std_logic;
-  signal t_minus_tau_sqr_alpha_dout_ready       : std_logic;
+  signal t_minus_tau_sqr_alpha_din_valid  : std_logic;
+  signal t_minus_tau_sqr_alpha_din_ready  : std_logic;
+  signal t_minus_tau_sqr_alpha_dout_valid : std_logic;
+  signal t_minus_tau_sqr_alpha_dout_ready : std_logic;
 
-  signal rescale_gaussian_din_valid             : std_logic;
-  signal rescale_gaussian_din_ready             : std_logic;
-  signal rescale_gaussian_dout_valid            : std_logic;
-  signal rescale_gaussian_dout_ready            : std_logic;
+  signal rescale_gaussian_din_valid  : std_logic;
+  signal rescale_gaussian_din_ready  : std_logic;
+  signal rescale_gaussian_dout_valid : std_logic;
+  signal rescale_gaussian_dout_ready : std_logic;
 
-  signal gaussian_index_din_valid               : std_logic;
-  signal gaussian_index_din_ready               : std_logic;
-  signal gaussian_index_dout_valid              : std_logic;
-  signal gaussian_index_dout_ready              : std_logic;
+  signal gaussian_index_din_valid  : std_logic;
+  signal gaussian_index_din_ready  : std_logic;
+  signal gaussian_index_dout_valid : std_logic;
+  signal gaussian_index_dout_ready : std_logic;
 
-  signal exp_lut_din_valid                      : std_logic;
-  signal exp_lut_din_ready                      : std_logic;
-  signal exp_lut_dout_valid                     : std_logic;
-  signal exp_lut_dout_ready                     : std_logic;
+  signal exp_lut_din_valid  : std_logic;
+  signal exp_lut_din_ready  : std_logic;
+  signal exp_lut_dout_valid : std_logic;
+  signal exp_lut_dout_ready : std_logic;
 
-  signal negative_tau                           : std_logic_vector(31 downto 0);
-  signal t_minus_tau                            : std_logic_vector(31 downto 0);
-  signal t_minus_tau_sqr                        : std_logic_vector(31 downto 0);
-  signal t_minus_tau_sqr_alpha                  : std_logic_vector(31 downto 0);
-  signal t_minus_tau_sqr_rescale                : std_logic_vector(31 downto 0);
-  signal gaussian_index_dout                    : std_logic_vector(16 downto 0);
-  signal gaussian_index_dout_int                : std_logic_vector(15 downto 0);
-  signal gaussian_index_round                   : std_logic_vector(15 downto 0);
-  signal exp_lut_dout                           : std_logic_vector(31 downto 0);
-
-------------------------------------------------------------------------------
-
-  signal t_m_tau_times_fc                       : std_logic_vector(31 downto 0);
-  signal t_m_tau_times_fc_din_valid             : std_logic;
-  signal t_m_tau_times_fc_din_ready             : std_logic;
-  signal t_m_tau_times_fc_dout_valid            : std_logic;
-  signal t_m_tau_times_fc_dout_ready            : std_logic;
-
-  signal t_m_tau_times_fc_fixed                 : std_logic_vector(25+17-1 downto 0);
-  signal t_m_tau_times_fc_fixed_twos            : std_logic_vector(25+17-1 downto 0);
-  signal t_m_tau_times_fc_fixed_neg_adj         : std_logic_vector(18-1 downto 0);
-  signal t_m_tau_times_fc_fixed_dout_valid      : std_logic;
-  signal t_m_tau_times_fc_fixed_dout_ready      : std_logic;
-
-  signal fc_sine_lut_din                        : std_logic_vector(16 downto 0);
-  signal fc_sine_lut_din_round                  : std_logic_vector(15 downto 0);
-  signal fc_cos_lut_din                         : std_logic_vector(15 downto 0);
-  signal fc_sine_lut_dout                       : std_logic_vector(31 downto 0);
-  signal fc_cos_lut_dout                        : std_logic_vector(31 downto 0);
-  signal fc_sine_lut_dout_valid                 : std_logic;
-  signal fc_sine_lut_dout_ready                 : std_logic;
+  signal negative_tau             : std_logic_vector(31 downto 0);
+  signal negative_tau_din         : std_logic_vector(31 downto 0);
+  signal t_minus_tau              : std_logic_vector(31 downto 0);
+  signal t_minus_tau_sqr          : std_logic_vector(31 downto 0);
+  signal t_minus_tau_sqr_alpha    : std_logic_vector(31 downto 0);
+  signal t_minus_tau_sqr_rescale  : std_logic_vector(31 downto 0);
+  signal gaussian_index_dout  : std_logic_vector(16 downto 0);
+  signal gaussian_index_dout_int  : std_logic_vector(15 downto 0);
+  signal gaussian_index_round : std_logic_vector(15 downto 0);
+  signal exp_lut_dout : std_logic_vector(31 downto 0);
 
 ------------------------------------------------------------------------------
 
-  signal t_m_tau_sqrd_times_fc                  : std_logic_vector(31 downto 0);
-  signal t_m_tau_sqrd_times_fc_din_valid        : std_logic;
-  signal t_m_tau_sqrd_times_fc_din_ready        : std_logic;
-  signal t_m_tau_sqrd_times_fc_dout_valid       : std_logic;
-  signal t_m_tau_sqrd_times_fc_dout_ready       : std_logic;
+  signal t_m_tau_times_fc             : std_logic_vector(31 downto 0);
+  signal t_m_tau_times_fc_din_valid   : std_logic;
+  signal t_m_tau_times_fc_din_ready   : std_logic;
+  signal t_m_tau_times_fc_dout_valid  : std_logic;
+  signal t_m_tau_times_fc_dout_ready  : std_logic;
 
-  signal t_m_tau_sqrd_times_fc_fixed            : std_logic_vector(25+17-1 downto 0);
+  signal t_m_tau_times_fc_fixed : std_logic_vector(25+17-1 downto 0);
+  signal t_m_tau_times_fc_fixed_twos : std_logic_vector(25+17-1 downto 0);
+  signal t_m_tau_times_fc_fixed_neg_adj : std_logic_vector(18-1 downto 0);
+  signal t_m_tau_times_fc_fixed_dout_valid : std_logic;
+  signal t_m_tau_times_fc_fixed_dout_ready : std_logic;
+
+  signal fc_sine_lut_din : std_logic_vector(16 downto 0);
+  signal fc_sine_lut_din_round : std_logic_vector(15 downto 0);
+  signal fc_cos_lut_din : std_logic_vector(15 downto 0);
+  signal fc_sine_lut_dout : std_logic_vector(31 downto 0);
+  signal fc_cos_lut_dout : std_logic_vector(31 downto 0);
+  signal fc_sine_lut_dout_valid : std_logic;
+  signal fc_sine_lut_dout_ready : std_logic;
+
+------------------------------------------------------------------------------
+
+  signal t_m_tau_sqrd_times_fc             : std_logic_vector(31 downto 0);
+  signal t_m_tau_sqrd_times_fc_din_valid   : std_logic;
+  signal t_m_tau_sqrd_times_fc_din_ready   : std_logic;
+  signal t_m_tau_sqrd_times_fc_dout_valid  : std_logic;
+  signal t_m_tau_sqrd_times_fc_dout_ready  : std_logic;
+
+  signal t_m_tau_sqrd_times_fc_fixed : std_logic_vector(25+17-1 downto 0);
   signal t_m_tau_sqrd_times_fc_fixed_dout_valid : std_logic;
   signal t_m_tau_sqrd_times_fc_fixed_dout_ready : std_logic;
 
-  signal alpha2_sine_lut_din                    : std_logic_vector(16 downto 0);
-  signal alpha2_sine_lut_din_round              : std_logic_vector(15 downto 0);
-  signal alpha2_sine_lut_dout                   : std_logic_vector(31 downto 0);
-  signal alpha2_cos_lut_dout                    : std_logic_vector(31 downto 0);
-  signal alpha2_sine_lut_dout_valid             : std_logic;
-  signal alpha2_sine_lut_dout_ready             : std_logic;
+  signal alpha2_sine_lut_din : std_logic_vector(16 downto 0);
+  signal alpha2_sine_lut_din_round : std_logic_vector(15 downto 0);
+  signal alpha2_cos_lut_din : std_logic_vector(15 downto 0);
+  signal alpha2_sine_lut_dout : std_logic_vector(31 downto 0);
+  signal alpha2_cos_lut_dout : std_logic_vector(31 downto 0);
+  signal alpha2_sine_lut_dout_valid : std_logic;
+  signal alpha2_sine_lut_dout_ready : std_logic;
 
 ------------------------------------------------------------------------------
 
-  signal phi_fixed                              : std_logic_vector(25+17-1 downto 0);
-  signal phi_fixed_twos                         : std_logic_vector(25+17-1 downto 0);
-  signal phi_fixed_dout_valid                   : std_logic;
-  signal phi_fixed_dout_ready                   : std_logic;
+  signal phi_fixed                : std_logic_vector(25+17-1 downto 0);
+  signal phi_fixed_twos           : std_logic_vector(25+17-1 downto 0);
+  signal phi_fixed_dout_valid     : std_logic;
+  signal phi_fixed_dout_ready     : std_logic;
 
-  signal phi_sine_lut_din                       : std_logic_vector(16 downto 0);
-  signal phi_sine_lut_din_round                 : std_logic_vector(15 downto 0);
-  signal phi_sine_lut_dout                      : std_logic_vector(31 downto 0);
-  signal phi_cos_lut_dout                       : std_logic_vector(31 downto 0);
-  signal phi_sine_lut_dout_valid                : std_logic;
-  signal phi_sine_lut_dout_ready                : std_logic;
-
-------------------------------------------------------------------------------
-
-  signal phasor_fixed_added                     : std_logic_vector(15 downto 0);
-  signal phasor_fixed_added_cos                 : std_logic_vector(15 downto 0);
-  signal phasor_fixed_added_valid               : std_logic;
-  signal phasor_fixed_added_ready               : std_logic;
-  signal phasor_dout_real                       : std_logic_vector(31 downto 0);
-  signal phasor_dout_imag                       : std_logic_vector(31 downto 0);
-  signal phasor_dout_valid                      : std_logic;
-  signal phasor_dout_ready                      : std_logic;
+  signal phi_sine_lut_din         : std_logic_vector(16 downto 0);
+  signal phi_sine_lut_din_round   : std_logic_vector(15 downto 0);
+  signal phi_cos_lut_din          : std_logic_vector(15 downto 0);
+  signal phi_sine_lut_dout        : std_logic_vector(31 downto 0);
+  signal phi_cos_lut_dout         : std_logic_vector(31 downto 0);
+  signal phi_sine_lut_dout_valid  : std_logic;
+  signal phi_sine_lut_dout_ready  : std_logic;
 
 ------------------------------------------------------------------------------
 
-  signal beta_times_gauss_din_valid             : std_logic;
-  signal beta_times_gauss_din_ready             : std_logic;
-  signal beta_times_gauss                       : std_logic_vector(31 downto 0);
-  signal beta_times_gauss_dout_valid            : std_logic;
-  signal beta_times_gauss_dout_ready            : std_logic;
+  signal beta_times_gauss_din_valid   : std_logic;
+  signal beta_times_gauss_din_ready   : std_logic;
+  signal beta_times_gauss             : std_logic_vector(31 downto 0);
+  signal beta_times_gauss_dout_valid  : std_logic;
+  signal beta_times_gauss_dout_ready  : std_logic;
 
 ------------------------------------------------------------------------------
 
-  signal complex_mult_din_valid                 : std_logic;
-  signal complex_mult_din_ready                 : std_logic;
-  signal complex_mult_real                      : std_logic_vector(31 downto 0);
-  signal complex_mult_imag                      : std_logic_vector(31 downto 0);
-  signal complex_mult_dout_valid                : std_logic;
-  signal complex_mult_dout_ready                : std_logic;
+  signal alpha2_times_gauss_din_valid   : std_logic;
+  signal alpha2_times_gauss_din_ready   : std_logic;
+  signal alpha2_times_gauss_real        : std_logic_vector(31 downto 0);
+  signal alpha2_times_gauss_imag        : std_logic_vector(31 downto 0);
+  signal alpha2_times_gauss_dout_valid  : std_logic;
+  signal alpha2_times_gauss_dout_ready  : std_logic;
 
 ------------------------------------------------------------------------------
 
-  signal final_fixed_dout_real                  : std_logic_vector(16 downto 0);
-  signal final_fixed_dout_imag                  : std_logic_vector(16 downto 0);
-  signal final_fixed_dout_valid                 : std_logic;
-  signal final_fixed_dout_ready                 : std_logic;
+  signal fc_times_phi_din_valid   : std_logic;
+  signal fc_times_phi_din_ready   : std_logic;
+  signal fc_times_phi_real        : std_logic_vector(31 downto 0);
+  signal fc_times_phi_imag        : std_logic_vector(31 downto 0);
+  signal fc_times_phi_dout_valid  : std_logic;
+  signal fc_times_phi_dout_ready  : std_logic;
+
+------------------------------------------------------------------------------
+
+  signal final_mult_din_valid   : std_logic;
+  signal final_mult_din_ready   : std_logic;
+  signal final_mult_real        : std_logic_vector(31 downto 0);
+  signal final_mult_imag        : std_logic_vector(31 downto 0);
+  signal final_mult_dout_valid  : std_logic;
+  signal final_mult_dout_ready  : std_logic;
+
+------------------------------------------------------------------------------
 
 begin
 
@@ -486,10 +492,11 @@ begin
   t_minus_tau_sqr_din_valid <= t_minus_tau_dout_valid and t_minus_tau_dout_ready;
   t_minus_tau_dout_ready    <= t_minus_tau_sqr_din_ready and t_m_tau_times_fc_din_ready;
 
+  -- bookmark
   u_t_minus_tau_sqr : floating_point_mult
     generic map
     (
-      G_BUFFER_INPUT  => false,
+      G_BUFFER_INPUT  => true,
       G_BUFFER_OUTPUT => false
     )
     port map
@@ -603,6 +610,7 @@ begin
   exp_lut_din_valid <= gaussian_index_dout_valid;
   gaussian_index_dout_ready <= exp_lut_din_ready;
 
+
   u_exponential_lut : exponential_lut
     generic map
     (
@@ -630,11 +638,12 @@ begin
 
   t_m_tau_times_fc_din_valid <= t_minus_tau_dout_valid and t_minus_tau_dout_ready;
 
+  -- bookmark
   u_t_m_tau_times_fc : floating_point_mult
     generic map
     (
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -661,7 +670,7 @@ begin
       G_FRACT_BITS    => 17,
       G_SIGNED_OUTPUT => true,
       G_BUFFER_INPUT  => true,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -680,9 +689,6 @@ begin
       dout_last       => open
     );
 
-  t_m_tau_times_fc_fixed_dout_ready <=
-    phasor_fixed_added_valid and phasor_fixed_added_ready;
-
   t_m_tau_times_fc_fixed_twos     <= std_logic_vector(unsigned(not t_m_tau_times_fc_fixed) + 1);
   t_m_tau_times_fc_fixed_neg_adj  <= std_logic_vector(C_LUT_ONE - unsigned('0' & t_m_tau_times_fc_fixed_twos(16 downto 0)));
 
@@ -693,6 +699,54 @@ begin
   fc_sine_lut_din_round <=
     fc_sine_lut_din(16 downto 1) when fc_sine_lut_din(0) = '0' else
     std_logic_vector(unsigned(fc_sine_lut_din(16 downto 1)) + 1);
+
+  u_fc_sine_lut : sine_lut
+    generic map
+    (
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
+    )
+    port map
+    (
+      clk             => clk,
+      reset           => reset,
+      enable          => enable,
+
+      din             => fc_sine_lut_din_round,
+      din_valid       => t_m_tau_times_fc_fixed_dout_valid,
+      din_ready       => t_m_tau_times_fc_fixed_dout_ready,
+      din_last        => '0',
+
+      dout            => fc_sine_lut_dout,
+      dout_valid      => fc_sine_lut_dout_valid,
+      dout_ready      => fc_sine_lut_dout_ready,
+      dout_last       => open
+    );
+
+  fc_cos_lut_din <= std_logic_vector(unsigned(fc_sine_lut_din_round) + to_unsigned(16384, 16));
+
+  u_fc_cos_lut : sine_lut
+    generic map
+    (
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
+    )
+    port map
+    (
+      clk             => clk,
+      reset           => reset,
+      enable          => enable,
+
+      din             => fc_cos_lut_din,
+      din_valid       => t_m_tau_times_fc_fixed_dout_valid,
+      din_ready       => open,
+      din_last        => '0',
+
+      dout            => fc_cos_lut_dout,
+      dout_valid      => open,
+      dout_ready      => fc_sine_lut_dout_ready,
+      dout_last       => open
+    );
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -728,8 +782,8 @@ begin
       G_INTEGER_BITS  => 25,
       G_FRACT_BITS    => 17,
       G_SIGNED_OUTPUT => true,
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -748,13 +802,59 @@ begin
       dout_last       => open
     );
 
-  t_m_tau_sqrd_times_fc_fixed_dout_ready <=
-    phasor_fixed_added_valid and phasor_fixed_added_ready;
 
   alpha2_sine_lut_din <= t_m_tau_sqrd_times_fc_fixed(16 downto 0);
   alpha2_sine_lut_din_round <=
     alpha2_sine_lut_din(16 downto 1) when alpha2_sine_lut_din(0) = '0' else
     std_logic_vector(unsigned(alpha2_sine_lut_din(16 downto 1)) + 1);
+
+  u_alpha2_sine_lut : sine_lut
+    generic map
+    (
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
+    )
+    port map
+    (
+      clk             => clk,
+      reset           => reset,
+      enable          => enable,
+
+      din             => alpha2_sine_lut_din_round,
+      din_valid       => t_m_tau_sqrd_times_fc_fixed_dout_valid,
+      din_ready       => t_m_tau_sqrd_times_fc_fixed_dout_ready,
+      din_last        => '0',
+
+      dout            => alpha2_sine_lut_dout,
+      dout_valid      => alpha2_sine_lut_dout_valid,
+      dout_ready      => alpha2_sine_lut_dout_ready,
+      dout_last       => open
+    );
+
+  alpha2_cos_lut_din <= std_logic_vector(unsigned(alpha2_sine_lut_din_round) + to_unsigned(16384, 16));
+
+  u_alpha2_cos_lut : sine_lut
+    generic map
+    (
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
+    )
+    port map
+    (
+      clk             => clk,
+      reset           => reset,
+      enable          => enable,
+
+      din             => alpha2_cos_lut_din,
+      din_valid       => t_m_tau_sqrd_times_fc_fixed_dout_valid,
+      din_ready       => open,
+      din_last        => '0',
+
+      dout            => alpha2_cos_lut_dout,
+      dout_valid      => open,
+      dout_ready      => alpha2_sine_lut_dout_ready,
+      dout_last       => open
+    );
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -784,8 +884,6 @@ begin
       dout_last       => open
     );
 
-  phi_fixed_dout_ready <= '1';
-
   phi_fixed_twos <= std_logic_vector(unsigned(not phi_fixed) + 1);
 
   phi_sine_lut_din <=
@@ -796,24 +894,11 @@ begin
     phi_sine_lut_din(16 downto 1) when phi_sine_lut_din(0) = '0' else
     std_logic_vector(unsigned(phi_sine_lut_din(16 downto 1)) + 1);
 
-----------------------------------------------------------------------------------------------------------------------------------------------------------
-
-  phasor_fixed_added <=
-    std_logic_vector
-    (
-      unsigned(fc_sine_lut_din_round) +
-      unsigned(alpha2_sine_lut_din_round) +
-      unsigned(phi_sine_lut_din_round)
-    );
-
-  phasor_fixed_added_valid <=
-    phi_fixed_dout_valid and t_m_tau_times_fc_fixed_dout_valid and t_m_tau_sqrd_times_fc_fixed_dout_valid;
-
-  u_phasor_sine_lut : sine_lut
+  u_phi_sine_lut : sine_lut
     generic map
     (
-      G_BUFFER_INPUT  => true,
-      G_BUFFER_OUTPUT => true
+      G_BUFFER_INPUT  => false,
+      G_BUFFER_OUTPUT => false
     )
     port map
     (
@@ -821,24 +906,24 @@ begin
       reset           => reset,
       enable          => enable,
 
-      din             => phasor_fixed_added,
-      din_valid       => phasor_fixed_added_valid,
-      din_ready       => phasor_fixed_added_ready,
+      din             => phi_sine_lut_din_round,
+      din_valid       => phi_fixed_dout_valid,
+      din_ready       => phi_fixed_dout_ready,
       din_last        => '0',
 
-      dout            => phasor_dout_imag,
-      dout_valid      => phasor_dout_valid,
-      dout_ready      => phasor_dout_ready,
+      dout            => phi_sine_lut_dout,
+      dout_valid      => phi_sine_lut_dout_valid,
+      dout_ready      => phi_sine_lut_dout_ready,
       dout_last       => open
     );
 
-  phasor_fixed_added_cos <= std_logic_vector(unsigned(phasor_fixed_added) + to_unsigned(16384, 16));
+  phi_cos_lut_din <= std_logic_vector(unsigned(phi_sine_lut_din_round) + to_unsigned(16384, 16));
 
-  u_phasor_cos_lut : sine_lut
+  u_phi_cos_lut : sine_lut
     generic map
     (
-      G_BUFFER_INPUT  => true,
-      G_BUFFER_OUTPUT => true
+      G_BUFFER_INPUT  => false,
+      G_BUFFER_OUTPUT => false
     )
     port map
     (
@@ -846,18 +931,18 @@ begin
       reset           => reset,
       enable          => enable,
 
-      din             => phasor_fixed_added_cos,
-      din_valid       => phasor_fixed_added_valid,
+      din             => phi_cos_lut_din,
+      din_valid       => phi_fixed_dout_valid,
       din_ready       => open,
       din_last        => '0',
 
-      dout            => phasor_dout_real,
+      dout            => phi_cos_lut_dout,
       dout_valid      => open,
-      dout_ready      => phasor_dout_ready,
+      dout_ready      => phi_sine_lut_dout_ready,
       dout_last       => open
     );
 
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------
 
   beta_times_gauss_din_valid  <= exp_lut_dout_valid;
   exp_lut_dout_ready          <= beta_times_gauss_din_ready;
@@ -865,8 +950,8 @@ begin
   u_beta_times_gauss : floating_point_mult
     generic map
     (
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -886,13 +971,13 @@ begin
       dout_last       => open
     );
 
-----------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------
 
-  complex_mult_din_valid      <= beta_times_gauss_dout_valid and phasor_dout_valid;
-  phasor_dout_ready           <= beta_times_gauss_dout_valid and phasor_dout_valid and complex_mult_din_ready;
-  beta_times_gauss_dout_ready <= beta_times_gauss_dout_valid and phasor_dout_valid and complex_mult_din_ready;
+  alpha2_times_gauss_din_valid  <= beta_times_gauss_dout_valid and alpha2_sine_lut_dout_valid;
+  alpha2_sine_lut_dout_ready    <= beta_times_gauss_dout_valid and alpha2_sine_lut_dout_valid and alpha2_times_gauss_din_ready;
+  beta_times_gauss_dout_ready   <= beta_times_gauss_dout_valid and alpha2_sine_lut_dout_valid and alpha2_times_gauss_din_ready;
 
-  u_complex_mult : complex_mult_fp
+  u_alpha2_times_gauss : complex_mult_fp
     port map
     (
       clk             => clk,
@@ -901,16 +986,72 @@ begin
 
       din1_real       => beta_times_gauss,
       din1_imag       => (others => '0'),
-      din2_real       => phasor_dout_real,
-      din2_imag       => phasor_dout_imag,
-      din_valid       => complex_mult_din_valid,
-      din_ready       => complex_mult_din_ready,
+      din2_real       => alpha2_cos_lut_dout,
+      din2_imag       => alpha2_sine_lut_dout,
+      din_valid       => alpha2_times_gauss_din_valid,
+      din_ready       => alpha2_times_gauss_din_ready,
       din_last        => '0',
 
-      dout_real       => complex_mult_real,
-      dout_imag       => complex_mult_imag,
-      dout_valid      => complex_mult_dout_valid,
-      dout_ready      => complex_mult_dout_ready,
+      dout_real       => alpha2_times_gauss_real,
+      dout_imag       => alpha2_times_gauss_imag,
+      dout_valid      => alpha2_times_gauss_dout_valid,
+      dout_ready      => alpha2_times_gauss_dout_ready,
+      dout_last       => open
+    );
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  fc_times_phi_din_valid  <= phi_sine_lut_dout_valid and fc_sine_lut_dout_valid;
+  phi_sine_lut_dout_ready <= phi_sine_lut_dout_valid and fc_sine_lut_dout_valid and fc_times_phi_din_ready;
+  fc_sine_lut_dout_ready  <= phi_sine_lut_dout_valid and fc_sine_lut_dout_valid and fc_times_phi_din_ready;
+
+  u_fc_times_phi : complex_mult_fp
+    port map
+    (
+      clk             => clk,
+      reset           => reset,
+      enable          => enable,
+
+      din1_real       => phi_cos_lut_dout,
+      din1_imag       => phi_sine_lut_dout,
+      din2_real       => fc_cos_lut_dout,
+      din2_imag       => fc_sine_lut_dout,
+      din_valid       => fc_times_phi_din_valid,
+      din_ready       => fc_times_phi_din_ready,
+      din_last        => '0',
+
+      dout_real       => fc_times_phi_real,
+      dout_imag       => fc_times_phi_imag,
+      dout_valid      => fc_times_phi_dout_valid,
+      dout_ready      => fc_times_phi_dout_ready,
+      dout_last       => open
+    );
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+
+  final_mult_din_valid          <= alpha2_times_gauss_dout_valid and fc_times_phi_dout_valid;
+  alpha2_times_gauss_dout_ready <= alpha2_times_gauss_dout_valid and fc_times_phi_dout_valid and final_mult_din_ready;
+  fc_times_phi_dout_ready       <= alpha2_times_gauss_dout_valid and fc_times_phi_dout_valid and final_mult_din_ready;
+
+  u_final_mult : complex_mult_fp
+    port map
+    (
+      clk             => clk,
+      reset           => reset,
+      enable          => enable,
+
+      din1_real       => fc_times_phi_real,
+      din1_imag       => fc_times_phi_imag,
+      din2_real       => alpha2_times_gauss_real,
+      din2_imag       => alpha2_times_gauss_imag,
+      din_valid       => final_mult_din_valid,
+      din_ready       => final_mult_din_ready,
+      din_last        => '0',
+
+      dout_real       => final_mult_real,
+      dout_imag       => final_mult_imag,
+      dout_valid      => final_mult_dout_valid,
+      dout_ready      => final_mult_dout_ready,
       dout_last       => open
     );
 
@@ -929,45 +1070,15 @@ begin
       reset           => reset,
       enable          => enable,
 
-      din             => complex_mult_real,
-      din_valid       => complex_mult_dout_valid,
-      din_ready       => complex_mult_dout_ready,
+      din             => final_mult_real,
+      din_valid       => final_mult_dout_valid,
+      din_ready       => final_mult_dout_ready,
       din_last        => '0',
 
-      dout            => final_fixed_dout_real,
-      dout_valid      => final_fixed_dout_valid,
-      dout_ready      => final_fixed_dout_ready,
-      dout_last       => open
-    );
-
-  u_final_imag_fixed : float_to_fixed
-    generic map
-    (
-      G_INTEGER_BITS  => 1,
-      G_FRACT_BITS    => 16,
-      G_SIGNED_OUTPUT => true,
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
-    )
-    port map
-    (
-      clk             => clk,
-      reset           => reset,
-      enable          => enable,
-
-      din             => complex_mult_imag,
-      din_valid       => complex_mult_dout_valid,
-      din_ready       => open,
-      din_last        => '0',
-
-      dout            => final_fixed_dout_imag,
+      dout            => open,
       dout_valid      => open,
-      dout_ready      => final_fixed_dout_ready,
+      dout_ready      => dout_ready,
       dout_last       => open
     );
-
-  dout                    <= final_fixed_dout_real(15 downto 0) & final_fixed_dout_imag(15 downto 0);
-  dout_valid              <= final_fixed_dout_valid;
-  final_fixed_dout_ready  <= dout_ready;
 
 end rtl;
