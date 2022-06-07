@@ -53,13 +53,41 @@ begin
   
   process
   begin
-    -- clock rate of 10MHz
+    -- clock rate of 10MHz, 8 out of 64 inputs generated per cycle so wait 8 cycles between inputs
+    wait for 5 ns;
+    clk <= '0';
+    wait for 5 ns;
+    clk <= '1';
+    wait for 5 ns;
+    clk <= '0';
+    wait for 5 ns;
+    clk <= '1';
+    wait for 5 ns;
+    clk <= '0';
+    wait for 5 ns;
+    clk <= '1';
+    wait for 5 ns;
+    clk <= '0';
+    wait for 5 ns;
+    clk <= '1';
+    wait for 5 ns;
+    clk <= '0';
+    wait for 5 ns;
+    clk <= '1';
+    wait for 5 ns;
+    clk <= '0';
+    wait for 5 ns;
+    clk <= '1';
+    wait for 5 ns;
+    clk <= '0';
+    wait for 5 ns;
+    clk <= '1';
     wait for 5 ns;
     clk <= '0';
     wait for 5 ns;
     clk <= '1';
     
-    if tbstate<1564 then
+    if tbstate<316 then
       signalvalid<='1';
       for j in 0 to 63 loop
         inputsignal(16*j to 16*j+15)<=std_logic_vector(to_signed(1,16));
@@ -67,7 +95,7 @@ begin
       end loop;
     end if;
     
-    if tbstate>1563 and tbstate<3128 then
+    if tbstate>157 and tbstate<316 then
       signalvalid<='0';
       chirpvalid<='1';
       for j in 0 to 63 loop
@@ -76,13 +104,12 @@ begin
       end loop;
     end if;
     
-    if tbstate=3128 then
+    if tbstate=316 then
       chirpvalid<='0';
-    else
-      tbstate <=tbstate+1;
     end if;
+    tbstate <=tbstate+1;
   end process;
-  process(outvalid)
+  process(outvalid,tbstate)
   begin
     if rising_edge(outvalid) then
       report("xcorr="&to_string(to_integer(output(0 to 47)))&"+"&to_string(to_integer(output(48 to 95)))&"i");
