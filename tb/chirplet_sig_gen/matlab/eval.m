@@ -64,13 +64,17 @@ plot(t, real(sw_data))
 err = zeros(length(hw_data), 1);
 err2 = zeros(length(hw_data), 1);
 for i=1:length(err)
+
   err(i) = 100*(real(sw_data(i))-real(hw_data(i)))/real(sw_data(i));
+
   if err(i) > 10
     err(i) = 10;
   elseif err(i) < -10
     err(i) = -10;
   end
+
   diff(i) = (real(sw_data(i))-real(hw_data(i)));
+
 end
 
 figure(2); hold on;
