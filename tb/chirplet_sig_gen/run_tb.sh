@@ -14,12 +14,12 @@ rand_seed=`date +%s`
 echo rand_seed: $rand_seed
 
 time_step=0.00000001
-tau=0.00005
+tau=0.0000595
 alpha1=10000000000
-f_c=1000000
+f_c=500000
 alpha2=10000000000
 phi=0.75
-beta=0.5
+beta=0.25
 
 input_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
 output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/"

@@ -3,18 +3,20 @@
 vlib work
 vmap work work
 
-vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v1/exponential_lut/exponential_rom.vhd
-vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v1/sine_lut/sine_rom.vhd
-vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v1/exponential_lut/exponential_lut.vhd
-vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v1/sine_lut/sine_lut.vhd
+chirplet_gen_version=2
+
+vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v${chirplet_gen_version}/exponential_lut/exponential_rom.vhd
+vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v${chirplet_gen_version}/sine_lut/sine_rom.vhd
+vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v${chirplet_gen_version}/exponential_lut/exponential_lut.vhd
+vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v${chirplet_gen_version}/sine_lut/sine_lut.vhd
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/axis_buffer_v2/axis_buffer.vhd
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/float_to_fixed_v1/float_to_fixed.vhd
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/floating_point_alu_v2/floating_point_add.vhd
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/floating_point_alu_v2/floating_point_mult.vhd
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/axis_lut_v1/bram.vhd
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/axis_lut_v1/axis_lut.vhd
-vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v1/complex_mult_fp.vhd
-vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v1/chirplet_gen.vhd
+vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v${chirplet_gen_version}/complex_mult_fp.vhd
+vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v${chirplet_gen_version}/chirplet_gen.vhd
 
 #vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v1/nco.vhd
 

@@ -251,6 +251,8 @@ architecture behavioral of tb_chirplet_sig_gen is
       reset           : in std_logic;
       enable          : in std_logic;
   
+      num_samps_out   : in  std_logic_vector(15 downto 0);
+  
       din_tau         : in  std_logic_vector(31 downto 0); -- floating point
       din_t_step      : in  std_logic_vector(31 downto 0); -- floating point
       din_alpha1      : in  std_logic_vector(31 downto 0); -- floating point
@@ -599,7 +601,7 @@ begin
       stream_log6_data_last
     );
   
-    wait for C_CLK_PERIOD*10;
+    wait for C_CLK_PERIOD*1000;
     report "simulation finished" severity failure;
     wait;
   end process;
@@ -633,6 +635,8 @@ begin
       clk             => clk,
       reset           => dut_reset,
       enable          => dut_enable,
+  
+      num_samps_out   => x"2710",
   
       din_tau         => tau,
       din_t_step      => time_step,
