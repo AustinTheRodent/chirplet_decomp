@@ -9,6 +9,8 @@ entity chirplet_gen is
     reset           : in std_logic;
     enable          : in std_logic;
 
+    num_samps_out   : in  std_logic_vector(15 downto 0);
+
     din_tau         : in  std_logic_vector(31 downto 0); -- floating point
     din_t_step      : in  std_logic_vector(31 downto 0); -- floating point
     din_alpha1      : in  std_logic_vector(31 downto 0); -- floating point
@@ -206,12 +208,27 @@ architecture rtl of chirplet_gen is
 
 ------------------------------------------------------------------------------
 
+  type state_t is (init, fetch_params, generate_chirp, reset_device);
+  signal state : state_t;
+  signal sample_counter                         : std_logic_vector(15 downto 0);
+  signal state_machine_reset                    : std_logic;
+  signal internal_reset                         : std_logic;
+
+------------------------------------------------------------------------------
+
+  signal din_tau_store                          : std_logic_vector(31 downto 0);
+  signal din_t_step_store                       : std_logic_vector(31 downto 0);
+  signal din_alpha1_store                       : std_logic_vector(31 downto 0);
+  signal din_f_c_store                          : std_logic_vector(31 downto 0);
+  signal din_alpha2_store                       : std_logic_vector(31 downto 0);
+  signal din_phi_store                          : std_logic_vector(31 downto 0);
   signal din_beta_store                         : std_logic_vector(31 downto 0);
 
 ------------------------------------------------------------------------------
 
   signal din_valid_latch                        : std_logic;
   signal din_ready_int                          : std_logic;
+  signal dout_valid_int                         : std_logic;
 
 ------------------------------------------------------------------------------
 
@@ -363,28 +380,76 @@ architecture rtl of chirplet_gen is
 
 begin
 
-  p_din_valid_latch : process(clk)
+  p_state_machine : process(clk)
   begin
     if rising_edge(clk) then
       if reset = '1' or enable = '0' then
-        din_valid_latch <= '0';
-        din_beta_store  <= (others => '0');
+        din_tau_store       <= (others => '0');
+        din_t_step_store    <= (others => '0');
+        din_alpha1_store    <= (others => '0');
+        din_f_c_store       <= (others => '0');
+        din_alpha2_store    <= (others => '0');
+        din_phi_store       <= (others => '0');
+        din_beta_store      <= (others => '0');
+        sample_counter      <= (others => '0');
+        state_machine_reset <= '0';
+        state               <= init;
       else
-        if din_valid = '1' and din_ready_int = '1' then
-          din_valid_latch <= '1';
-          din_beta_store  <= din_beta;
-        end if;
+        case state is
+          when init =>
+            din_tau_store       <= (others => '0');
+            din_t_step_store    <= (others => '0');
+            din_alpha1_store    <= (others => '0');
+            din_f_c_store       <= (others => '0');
+            din_alpha2_store    <= (others => '0');
+            din_phi_store       <= (others => '0');
+            din_beta_store      <= (others => '0');
+            sample_counter      <= (others => '0');
+            state_machine_reset <= '0';
+            state               <= fetch_params;
+          when fetch_params =>
+            if din_valid = '1' and din_ready_int = '1' then
+              din_tau_store     <= din_tau;
+              din_t_step_store  <= din_t_step;
+              din_alpha1_store  <= din_alpha1;
+              din_f_c_store     <= din_f_c;
+              din_alpha2_store  <= din_alpha2;
+              din_phi_store     <= din_phi;
+              din_beta_store    <= din_beta;
+              state             <= generate_chirp;
+            end if;
+          when generate_chirp =>
+            if dout_valid_int = '1' and dout_ready = '1' then
+              if unsigned(sample_counter) = unsigned(num_samps_out)-1 then
+                sample_counter      <= (others => '0');
+                state_machine_reset <= '1';
+                state               <= reset_device;
+              else
+                sample_counter  <= std_logic_vector(unsigned(sample_counter) + 1);
+              end if;
+            end if;
+          when reset_device =>
+            state_machine_reset <= '0';
+            state               <= init;
+          when others =>
+            state <= init;
+        end case;
       end if;
     end if;
   end process;
 
-  din_ready <= din_ready_int;
-  din_ready_int <= '1' when din_valid_latch = '0' and counter_din_ready = '1' else '0';
+  dout_last <= '1' when unsigned(sample_counter) = unsigned(num_samps_out)-1 and dout_valid_int = '1' and dout_ready = '1' else '0'; 
+
+  internal_reset  <= reset or state_machine_reset;
+  din_valid_latch <= '1' when state = generate_chirp else '0';
+
+  din_ready       <= din_ready_int;
+  din_ready_int   <= '1' when state = fetch_params else '0';
 
   p_time_zero : process(clk)
   begin
     if rising_edge(clk) then
-      if reset = '1' or enable = '0' then
+      if internal_reset = '1' or enable = '0' then
         first_samp <= '0';
       else
         if counter_din_valid = '1' and counter_din_ready = '1' then
@@ -394,8 +459,8 @@ begin
     end if;
   end process;
 
-  negative_tau(31)          <= din_tau(31) xor '1';
-  negative_tau(30 downto 0) <= din_tau(30 downto 0);
+  negative_tau(31)          <= din_tau_store(31) xor '1';
+  negative_tau(30 downto 0) <= din_tau_store(30 downto 0);
 
 
   counter_din1 <= x"3f800000";
@@ -414,7 +479,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din1            => counter_din1,
@@ -441,11 +506,11 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din1            => counter_dout,
-      din2            => din_t_step,
+      din2            => din_t_step_store,
       din_valid       => time_next_din_valid,
       din_ready       => time_next_din_ready,
       din_last        => '0',
@@ -468,7 +533,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
   
       din1            => negative_tau,
@@ -495,7 +560,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din1            => t_minus_tau,
@@ -522,11 +587,11 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din1            => t_minus_tau_sqr,
-      din2            => din_alpha1,
+      din2            => din_alpha1_store,
       din_valid       => t_minus_tau_sqr_alpha_din_valid,
       din_ready       => t_minus_tau_sqr_alpha_din_ready,
       din_last        => '0',
@@ -549,7 +614,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din1            => t_minus_tau_sqr_alpha,
@@ -579,7 +644,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din             => t_minus_tau_sqr_rescale,
@@ -612,7 +677,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din             => gaussian_index_round,
@@ -639,10 +704,10 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
-      din1            => din_f_c,
+      din1            => din_f_c_store,
       din2            => t_minus_tau,
       din_valid       => t_m_tau_times_fc_din_valid,
       din_ready       => t_m_tau_times_fc_din_ready,
@@ -666,7 +731,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din             => t_m_tau_times_fc,
@@ -707,10 +772,10 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
-      din1            => din_alpha2,
+      din1            => din_alpha2_store,
       din2            => t_minus_tau_sqr,
       din_valid       => t_m_tau_sqrd_times_fc_din_valid,
       din_ready       => t_m_tau_sqrd_times_fc_din_ready,
@@ -734,7 +799,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din             => t_m_tau_sqrd_times_fc,
@@ -770,10 +835,10 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
-      din             => din_phi,
+      din             => din_phi_store,
       din_valid       => '1',
       din_ready       => open,
       din_last        => '0',
@@ -818,7 +883,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din             => phasor_fixed_added,
@@ -843,7 +908,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din             => phasor_fixed_added_cos,
@@ -871,7 +936,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din1            => exp_lut_dout,
@@ -896,7 +961,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din1_real       => beta_times_gauss,
@@ -926,7 +991,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din             => complex_mult_real,
@@ -952,7 +1017,7 @@ begin
     port map
     (
       clk             => clk,
-      reset           => reset,
+      reset           => internal_reset,
       enable          => enable,
 
       din             => complex_mult_imag,
@@ -967,7 +1032,8 @@ begin
     );
 
   dout                    <= final_fixed_dout_real(15 downto 0) & final_fixed_dout_imag(15 downto 0);
-  dout_valid              <= final_fixed_dout_valid;
+  dout_valid_int          <= '1' when final_fixed_dout_valid = '1' and state = generate_chirp else '0';
   final_fixed_dout_ready  <= dout_ready;
+  dout_valid              <= dout_valid_int;
 
 end rtl;
