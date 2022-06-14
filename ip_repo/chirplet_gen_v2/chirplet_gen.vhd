@@ -20,7 +20,6 @@ entity chirplet_gen is
     din_beta        : in  std_logic_vector(31 downto 0); -- floating point
     din_valid       : in  std_logic;
     din_ready       : out std_logic;
-    din_last        : in  std_logic;
 
     dout            : out std_logic_vector(31 downto 0);
     dout_valid      : out std_logic;
@@ -30,177 +29,6 @@ entity chirplet_gen is
 end entity;
 
 architecture rtl of chirplet_gen is
-
-  component complex_mult_fp is
-    port
-    (
-      clk             : in std_logic;
-      reset           : in std_logic;
-      enable          : in std_logic;
-
-      din1_real       : in  std_logic_vector(31 downto 0);
-      din1_imag       : in  std_logic_vector(31 downto 0);
-      din2_real       : in  std_logic_vector(31 downto 0);
-      din2_imag       : in  std_logic_vector(31 downto 0);
-      din_valid       : in  std_logic;
-      din_ready       : out std_logic;
-      din_last        : in  std_logic;
-
-      dout_real       : out std_logic_vector(31 downto 0);
-      dout_imag       : out std_logic_vector(31 downto 0);
-      dout_valid      : out std_logic;
-      dout_ready      : in  std_logic;
-      dout_last       : out std_logic
-    );
-  end component;
-
-  component axis_buffer is
-    generic
-    (
-      G_DWIDTH    : integer := 8
-    );
-    port
-    (
-      clk         : in  std_logic;
-      reset       : in  std_logic;
-      enable      : in  std_logic;
-
-      din         : in  std_logic_vector(G_DWIDTH-1 downto 0);
-      din_valid   : in  std_logic;
-      din_ready   : out std_logic;
-      din_last    : in  std_logic;
-
-      dout        : out std_logic_vector(G_DWIDTH-1 downto 0);
-      dout_valid  : out std_logic;
-      dout_ready  : in  std_logic;
-      dout_last   : out std_logic
-    );
-  end component;
-
-  component exponential_lut is
-    generic
-    (
-      G_BUFFER_INPUT  : boolean := false;
-      G_BUFFER_OUTPUT : boolean := false
-    );
-    port
-    (
-      clk             : in std_logic;
-      reset           : in std_logic;
-      enable          : in std_logic;
-
-      din             : in  std_logic_vector(15 downto 0);
-      din_valid       : in  std_logic;
-      din_ready       : out std_logic;
-      din_last        : in  std_logic;
-
-      dout            : out std_logic_vector(31 downto 0);
-      dout_valid      : out std_logic;
-      dout_ready      : in  std_logic;
-      dout_last       : out std_logic
-    );
-  end component;
-
-  component sine_lut is
-    generic
-    (
-      G_BUFFER_INPUT  : boolean := false;
-      G_BUFFER_OUTPUT : boolean := false
-    );
-    port
-    (
-      clk             : in std_logic;
-      reset           : in std_logic;
-      enable          : in std_logic;
-
-      din             : in  std_logic_vector(15 downto 0);
-      din_valid       : in  std_logic;
-      din_ready       : out std_logic;
-      din_last        : in  std_logic;
-
-      dout            : out std_logic_vector(31 downto 0);
-      dout_valid      : out std_logic;
-      dout_ready      : in  std_logic;
-      dout_last       : out std_logic
-    );
-  end component;
-
-  component floating_point_mult is
-    generic
-    (
-      G_BUFFER_INPUT  : boolean := false;
-      G_BUFFER_OUTPUT : boolean := false
-    );
-    port
-    (
-      clk             : in  std_logic;
-      reset           : in  std_logic;
-      enable          : in  std_logic;
-
-      din1            : in  std_logic_vector(31 downto 0);
-      din2            : in  std_logic_vector(31 downto 0);
-      din_valid       : in  std_logic;
-      din_ready       : out std_logic;
-      din_last        : in  std_logic;
-
-      dout            : out std_logic_vector(31 downto 0);
-      dout_valid      : out std_logic;
-      dout_ready      : in  std_logic;
-      dout_last       : out std_logic
-    );
-  end component;
-
-  component floating_point_add is
-    generic
-    (
-      G_BUFFER_INPUT  : boolean := false;
-      G_BUFFER_OUTPUT : boolean := false
-    );
-    port
-    (
-      clk             : in  std_logic;
-      reset           : in  std_logic;
-      enable          : in  std_logic;
-
-      din1            : in  std_logic_vector(31 downto 0);
-      din2            : in  std_logic_vector(31 downto 0);
-      din_valid       : in  std_logic;
-      din_ready       : out std_logic;
-      din_last        : in  std_logic;
-
-      dout            : out std_logic_vector(31 downto 0);
-      dout_valid      : out std_logic;
-      dout_ready      : in  std_logic;
-      dout_last       : out std_logic
-    );
-  end component;
-
-  component float_to_fixed is
-    generic
-    (
-      G_INTEGER_BITS  : integer range 0 to 64 := 16;
-      G_FRACT_BITS    : integer range 0 to 64 := 16;
-      G_SIGNED_OUTPUT : boolean := false;
-      G_BUFFER_INPUT  : boolean := false;
-      G_BUFFER_OUTPUT : boolean := false
-    );
-    port
-    (
-      clk             : in std_logic;
-      reset           : in std_logic;
-      enable          : in std_logic;
-
-      din             : in  std_logic_vector(31 downto 0); -- always uses 32 bit floating point
-      din_valid       : in  std_logic;
-      din_ready       : out std_logic;
-      din_last        : in  std_logic;
-
-      dout            : out std_logic_vector(G_INTEGER_BITS+G_FRACT_BITS-1 downto 0);
-      dout_valid      : out std_logic;
-      dout_ready      : in  std_logic;
-      dout_last       : out std_logic
-    );
-  end component;
 
 ------------------------------------------------------------------------------
 
@@ -304,11 +132,6 @@ architecture rtl of chirplet_gen is
 
   signal fc_sine_lut_din                        : std_logic_vector(16 downto 0);
   signal fc_sine_lut_din_round                  : std_logic_vector(15 downto 0);
-  signal fc_cos_lut_din                         : std_logic_vector(15 downto 0);
-  signal fc_sine_lut_dout                       : std_logic_vector(31 downto 0);
-  signal fc_cos_lut_dout                        : std_logic_vector(31 downto 0);
-  signal fc_sine_lut_dout_valid                 : std_logic;
-  signal fc_sine_lut_dout_ready                 : std_logic;
 
 ------------------------------------------------------------------------------
 
@@ -324,10 +147,6 @@ architecture rtl of chirplet_gen is
 
   signal alpha2_sine_lut_din                    : std_logic_vector(16 downto 0);
   signal alpha2_sine_lut_din_round              : std_logic_vector(15 downto 0);
-  signal alpha2_sine_lut_dout                   : std_logic_vector(31 downto 0);
-  signal alpha2_cos_lut_dout                    : std_logic_vector(31 downto 0);
-  signal alpha2_sine_lut_dout_valid             : std_logic;
-  signal alpha2_sine_lut_dout_ready             : std_logic;
 
 ------------------------------------------------------------------------------
 
@@ -338,10 +157,6 @@ architecture rtl of chirplet_gen is
 
   signal phi_sine_lut_din                       : std_logic_vector(16 downto 0);
   signal phi_sine_lut_din_round                 : std_logic_vector(15 downto 0);
-  signal phi_sine_lut_dout                      : std_logic_vector(31 downto 0);
-  signal phi_cos_lut_dout                       : std_logic_vector(31 downto 0);
-  signal phi_sine_lut_dout_valid                : std_logic;
-  signal phi_sine_lut_dout_ready                : std_logic;
 
 ------------------------------------------------------------------------------
 
@@ -470,7 +285,7 @@ begin
 
   counter_din_valid <= din_valid_latch;
 
-  u_counter : floating_point_add
+  u_counter : entity work.floating_point_add
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -497,7 +312,7 @@ begin
   time_next_din_valid <= counter_dout_valid;
   counter_dout_ready <= time_next_din_ready;
 
-  u_time_next : floating_point_mult
+  u_time_next : entity work.floating_point_mult
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -524,7 +339,7 @@ begin
   t_minus_tau_din_valid <= time_next_dout_valid;
   time_next_dout_ready  <= t_minus_tau_din_ready;
 
-  u_t_minus_tau : floating_point_add
+  u_t_minus_tau : entity work.floating_point_add
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -551,7 +366,7 @@ begin
   t_minus_tau_sqr_din_valid <= t_minus_tau_dout_valid and t_minus_tau_dout_ready;
   t_minus_tau_dout_ready    <= t_minus_tau_sqr_din_ready and t_m_tau_times_fc_din_ready;
 
-  u_t_minus_tau_sqr : floating_point_mult
+  u_t_minus_tau_sqr : entity work.floating_point_mult
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -578,7 +393,7 @@ begin
   t_minus_tau_sqr_alpha_din_valid <= t_minus_tau_sqr_dout_valid and t_m_tau_sqrd_times_fc_din_ready;
   t_minus_tau_sqr_dout_ready      <= t_minus_tau_sqr_alpha_din_ready and t_m_tau_sqrd_times_fc_din_ready;
 
-  u_t_minus_tau_sqr_alpha : floating_point_mult
+  u_t_minus_tau_sqr_alpha : entity work.floating_point_mult
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -605,7 +420,7 @@ begin
   rescale_gaussian_din_valid        <= t_minus_tau_sqr_alpha_dout_valid;
   t_minus_tau_sqr_alpha_dout_ready  <= rescale_gaussian_din_ready;
 
-  u_rescale_gaussian : floating_point_mult
+  u_rescale_gaussian : entity work.floating_point_mult
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -632,7 +447,7 @@ begin
   gaussian_index_din_valid <= rescale_gaussian_dout_valid;
   rescale_gaussian_dout_ready <= gaussian_index_din_ready;
 
-  u_gaussian_lut_index : float_to_fixed
+  u_gaussian_lut_index : entity work.float_to_fixed
     generic map
     (
       G_INTEGER_BITS  => 16,
@@ -668,7 +483,7 @@ begin
   exp_lut_din_valid <= gaussian_index_dout_valid;
   gaussian_index_dout_ready <= exp_lut_din_ready;
 
-  u_exponential_lut : exponential_lut
+  u_exponential_lut : entity work.exponential_lut
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -695,7 +510,7 @@ begin
 
   t_m_tau_times_fc_din_valid <= t_minus_tau_dout_valid and t_minus_tau_dout_ready;
 
-  u_t_m_tau_times_fc : floating_point_mult
+  u_t_m_tau_times_fc : entity work.floating_point_mult
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -719,7 +534,7 @@ begin
       dout_last       => open
     );
 
-  u_convert_t_m_tau_times_fc : float_to_fixed
+  u_convert_t_m_tau_times_fc : entity work.float_to_fixed
     generic map
     (
       G_INTEGER_BITS  => 25,
@@ -763,7 +578,7 @@ begin
 
   t_m_tau_sqrd_times_fc_din_valid <= t_minus_tau_sqr_dout_valid and t_minus_tau_sqr_alpha_din_ready;
 
-  u_t_m_tau_sqrd_times_alpha2 : floating_point_mult
+  u_t_m_tau_sqrd_times_alpha2 : entity work.floating_point_mult
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -787,7 +602,7 @@ begin
       dout_last       => open
     );
 
-  u_convert_t_m_tau_sqrd_times_fc : float_to_fixed
+  u_convert_t_m_tau_sqrd_times_fc : entity work.float_to_fixed
     generic map
     (
       G_INTEGER_BITS  => 25,
@@ -823,7 +638,7 @@ begin
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------
 
-  u_convert_phi : float_to_fixed
+  u_convert_phi : entity work.float_to_fixed
     generic map
     (
       G_INTEGER_BITS  => 25,
@@ -874,7 +689,7 @@ begin
   phasor_fixed_added_valid <=
     phi_fixed_dout_valid and t_m_tau_times_fc_fixed_dout_valid and t_m_tau_sqrd_times_fc_fixed_dout_valid;
 
-  u_phasor_sine_lut : sine_lut
+  u_phasor_sine_lut : entity work.sine_lut
     generic map
     (
       G_BUFFER_INPUT  => true,
@@ -899,7 +714,7 @@ begin
 
   phasor_fixed_added_cos <= std_logic_vector(unsigned(phasor_fixed_added) + to_unsigned(16384, 16));
 
-  u_phasor_cos_lut : sine_lut
+  u_phasor_cos_lut : entity work.sine_lut
     generic map
     (
       G_BUFFER_INPUT  => true,
@@ -927,7 +742,7 @@ begin
   beta_times_gauss_din_valid  <= exp_lut_dout_valid;
   exp_lut_dout_ready          <= beta_times_gauss_din_ready;
 
-  u_beta_times_gauss : floating_point_mult
+  u_beta_times_gauss : entity work.floating_point_mult
     generic map
     (
       G_BUFFER_INPUT  => false,
@@ -957,7 +772,7 @@ begin
   phasor_dout_ready           <= beta_times_gauss_dout_valid and phasor_dout_valid and complex_mult_din_ready;
   beta_times_gauss_dout_ready <= beta_times_gauss_dout_valid and phasor_dout_valid and complex_mult_din_ready;
 
-  u_complex_mult : complex_mult_fp
+  u_complex_mult : entity work.complex_mult_fp
     port map
     (
       clk             => clk,
@@ -979,7 +794,7 @@ begin
       dout_last       => open
     );
 
-  u_final_real_fixed : float_to_fixed
+  u_final_real_fixed : entity work.float_to_fixed
     generic map
     (
       G_INTEGER_BITS  => 1,
@@ -1005,7 +820,7 @@ begin
       dout_last       => open
     );
 
-  u_final_imag_fixed : float_to_fixed
+  u_final_imag_fixed : entity work.float_to_fixed
     generic map
     (
       G_INTEGER_BITS  => 1,
