@@ -24,7 +24,6 @@ entity chirplet_sig_gen_parallel_samps is
     din_beta                  : in  std_logic_vector(31 downto 0); -- floating point
     din_valid                 : in  std_logic;
     din_ready                 : out std_logic;
-    din_last                  : in  std_logic;
 
     dout                      : out std_logic_vector((32*G_NUM_PARALLEL_GENERATORS)-1 downto 0);
     dout_valid                : out std_logic;
@@ -35,18 +34,123 @@ end entity;
 
 architecture rtl of chirplet_sig_gen_parallel_samps is
 
+  constant C_WAIT_FOR_SETTINGS_LIM  : integer := 2;
+
   alias G_N : integer range 2 to 32 is G_NUM_PARALLEL_GENERATORS;
 
-  signal g_n_slv            : std_logic_vector(31 downto 0);
-  signal time_step_times_n  : std_logic_vector(31 downto 0);
+  signal din_ready_int              : std_logic;
+  signal dout_valid_int             : std_logic_vector(G_N-1 downto 0);
+  signal dout_last_int              : std_logic_vector(G_N-1 downto 0);
+
+  signal g_n_slv                    : std_logic_vector(31 downto 0);
+  signal time_step_times_n          : std_logic_vector(31 downto 0);
+
+  type state_t is (init, get_params, wait_for_settings, pulse_valid, wait_for_last, reset_chirplet_gen);
+  signal state                      : state_t;
 
   type float_array_t is array(0 to G_N-1) of std_logic_vector(31 downto 0);
-  signal g_i_conv           : float_array_t;
-  signal mult_tau           : float_array_t;
-  signal negative_mult_tau  : float_array_t;
+  signal g_i_conv                   : float_array_t;
+  signal mult_tau                   : float_array_t;
+  signal negative_mult_tau          : float_array_t;
+  signal added_tau                  : float_array_t;
+  signal single_chirp_dout          : float_array_t;
+
+  signal single_chirp_reset         : std_logic;
+  --signal single_chirp_dout          : std_logic_vector(31 downto 0);
+  signal single_chirp_din_valid     : std_logic;
+  signal din_t_step_mult            : std_logic_vector(31 downto 0);
+  signal din_tau_store              : std_logic_vector(31 downto 0);
+  signal din_t_step_store           : std_logic_vector(31 downto 0);
+  signal din_alpha1_store           : std_logic_vector(31 downto 0);
+  signal din_f_c_store              : std_logic_vector(31 downto 0);
+  signal din_alpha2_store           : std_logic_vector(31 downto 0);
+  signal din_phi_store              : std_logic_vector(31 downto 0);
+  signal din_beta_store             : std_logic_vector(31 downto 0);
+  signal num_samps_out_store        : std_logic_vector(15 downto 0);
 
 begin
 
+  din_ready     <= din_ready_int;
+  dout_valid    <= dout_valid_int(0);
+  dout_last     <= dout_last_int(0);
+
+  din_ready_int <= '1' when state = get_params else '0';
+
+  p_state_machine : process(clk)
+    variable v_wait_counter : integer range 0 to 2**8-1;
+  begin
+    if rising_edge(clk) then
+      if reset = '1' or enable = '0' then
+        single_chirp_reset      <= '1';
+        single_chirp_din_valid  <= '0';
+        din_tau_store           <= (others => '0');
+        din_t_step_store        <= (others => '0');
+        din_alpha1_store        <= (others => '0');
+        din_f_c_store           <= (others => '0');
+        din_alpha2_store        <= (others => '0');
+        din_phi_store           <= (others => '0');
+        din_beta_store          <= (others => '0');
+        num_samps_out_store     <= (others => '0');
+        state                   <= init;
+        v_wait_counter          := 0;
+      else
+        case state is
+          when init =>
+            single_chirp_reset  <= '0';
+            single_chirp_din_valid  <= '0';
+            din_tau_store           <= (others => '0');
+            din_t_step_store        <= (others => '0');
+            din_alpha1_store        <= (others => '0');
+            din_f_c_store           <= (others => '0');
+            din_alpha2_store        <= (others => '0');
+            din_phi_store           <= (others => '0');
+            din_beta_store          <= (others => '0');
+            num_samps_out_store     <= (others => '0');
+            state                   <= get_params;
+            v_wait_counter          := 0;
+
+          when get_params =>
+            if din_valid = '1' and din_ready_int = '1' then
+              din_tau_store       <= din_tau;
+              din_t_step_store    <= din_t_step;
+              din_alpha1_store    <= din_alpha1;
+              din_f_c_store       <= din_f_c;
+              din_alpha2_store    <= din_alpha2;
+              din_phi_store       <= din_phi;
+              din_beta_store      <= din_beta;
+              num_samps_out_store <= num_samps_out;
+              state               <= wait_for_settings;
+            end if;
+
+          when wait_for_settings =>
+            if v_wait_counter = C_WAIT_FOR_SETTINGS_LIM-1 then
+              single_chirp_din_valid  <= '1';
+              state                   <= pulse_valid;
+              v_wait_counter          := 0;
+            else
+              v_wait_counter          := v_wait_counter + 1;
+            end if;
+            
+          when pulse_valid =>
+            single_chirp_din_valid    <= '0';
+            state                     <= wait_for_last;
+
+          when wait_for_last =>
+            if dout_valid_int(0) = '1' and dout_last_int(0) = '1' then
+              single_chirp_reset  <= '1';
+              state               <= reset_chirplet_gen;
+            end if;
+
+          when reset_chirplet_gen =>
+            single_chirp_reset  <= '0';
+            state               <= get_params;
+
+          when others =>
+            state <= init;
+        end case;
+      end if;
+    end if;
+  end process;
 
   u_convert_g_n : entity work.fixed_to_float
     generic map
@@ -87,16 +191,18 @@ begin
       enable          => enable,
 
       din1            => g_n_slv,
-      din2            => din_t_step,
+      din2            => din_t_step_store,
       din_valid       => '1',
       din_ready       => open,
       din_last        => '0',
 
-      dout            => open,
+      dout            => din_t_step_mult,
       dout_valid      => open,
       dout_ready      => '1',
       dout_last       => open
     );
+
+  single_chirp_reset <= reset or single_chirp_reset;
 
   g_mult_tau : for i in 0 to G_N-1 generate
     u_conv_i : entity work.fixed_to_float
@@ -138,7 +244,7 @@ begin
         enable          => enable,
 
         din1            => g_i_conv(i),
-        din2            => din_t_step,
+        din2            => din_t_step_store,
         din_valid       => '1',
         din_ready       => open,
         din_last        => '0',
@@ -164,16 +270,45 @@ begin
         enable          => enable,
 
         din1            => negative_mult_tau(i),
-        din2            => din_tau,
+        din2            => din_tau_store,
         din_valid       => '1',
         din_ready       => open,
         din_last        => '0',
 
-        dout            => open,
+        dout            => added_tau(i),
         dout_valid      => open,
         dout_ready      => '1',
         dout_last       => open
       );
+
+    u_chirplet_gen_single : entity work.chirplet_gen
+      port map
+      (
+        clk             => clk,
+        reset           => single_chirp_reset,
+        enable          => enable,
+
+        num_samps_out   => num_samps_out_store,
+
+        din_tau         => added_tau(i),
+        din_t_step      => din_t_step_mult,
+        din_alpha1      => din_alpha1_store,
+        din_f_c         => din_f_c_store,
+        din_alpha2      => din_alpha2_store,
+        din_phi         => din_phi_store,
+        din_beta        => din_beta_store,
+        din_valid       => single_chirp_din_valid,
+        din_ready       => open,
+
+        dout            => single_chirp_dout(i),
+        dout_valid      => dout_valid_int(i),
+        dout_ready      => dout_ready,
+        dout_last       => dout_last_int(i)
+      );
+
+    dout((i+1)*32-1 downto i*32) <= single_chirp_dout(i);
+    -- todo: reverse order generation as generic parameter
+    -- todo: matlab verification
 
   end generate;
 

@@ -51,6 +51,7 @@ architecture rtl of chirplet_gen is
   signal din_alpha2_store                       : std_logic_vector(31 downto 0);
   signal din_phi_store                          : std_logic_vector(31 downto 0);
   signal din_beta_store                         : std_logic_vector(31 downto 0);
+  signal num_samps_out_store                    : std_logic_vector(15 downto 0);
 
 ------------------------------------------------------------------------------
 
@@ -220,22 +221,24 @@ begin
             din_phi_store       <= (others => '0');
             din_beta_store      <= (others => '0');
             sample_counter      <= (others => '0');
+            num_samps_out_store <= (others => '0');
             state_machine_reset <= '0';
             state               <= fetch_params;
           when fetch_params =>
             if din_valid = '1' and din_ready_int = '1' then
-              din_tau_store     <= din_tau;
-              din_t_step_store  <= din_t_step;
-              din_alpha1_store  <= din_alpha1;
-              din_f_c_store     <= din_f_c;
-              din_alpha2_store  <= din_alpha2;
-              din_phi_store     <= din_phi;
-              din_beta_store    <= din_beta;
-              state             <= generate_chirp;
+              din_tau_store       <= din_tau;
+              din_t_step_store    <= din_t_step;
+              din_alpha1_store    <= din_alpha1;
+              din_f_c_store       <= din_f_c;
+              din_alpha2_store    <= din_alpha2;
+              din_phi_store       <= din_phi;
+              din_beta_store      <= din_beta;
+              num_samps_out_store <= num_samps_out;
+              state               <= generate_chirp;
             end if;
           when generate_chirp =>
             if dout_valid_int = '1' and dout_ready = '1' then
-              if unsigned(sample_counter) = unsigned(num_samps_out)-1 then
+              if unsigned(sample_counter) = unsigned(num_samps_out_store)-1 then
                 sample_counter      <= (others => '0');
                 state_machine_reset <= '1';
                 state               <= reset_device;
@@ -253,7 +256,7 @@ begin
     end if;
   end process;
 
-  dout_last <= '1' when unsigned(sample_counter) = unsigned(num_samps_out)-1 and dout_valid_int = '1' and dout_ready = '1' else '0'; 
+  dout_last <= '1' when unsigned(sample_counter) = unsigned(num_samps_out_store)-1 and dout_valid_int = '1' and dout_ready = '1' else '0'; 
 
   internal_reset  <= reset or state_machine_reset;
   din_valid_latch <= '1' when state = generate_chirp else '0';
