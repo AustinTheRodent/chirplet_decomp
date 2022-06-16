@@ -596,6 +596,15 @@ begin
     end if;
   end process;
 
+  p_wait_for_last : process
+  begin
+    wait until rising_edge(clk);
+    if dut_dout_valid = '1' and dut_dout_ready = '1' and dut_dout_last = '1' then
+      wait for C_CLK_PERIOD*1000;
+      report "simulation finished" severity failure;
+    end if;
+  end process;
+
   dut_din_valid   <= din_valid_main and din_valid_rand;
   dut_dout_ready  <= dout_ready_rand;
 
@@ -623,12 +632,11 @@ begin
       din_beta                  => beta,
       din_valid                 => dut_din_valid,
       din_ready                 => open,
-      din_last                  => '0',
 
       dout                      => open,
-      dout_valid                => open,
-      dout_ready                => dout_ready_rand,
-      dout_last                 => open
+      dout_valid                => dut_dout_valid,
+      dout_ready                => dut_dout_ready,
+      dout_last                 => dut_dout_last
     );
 
 end behavioral;

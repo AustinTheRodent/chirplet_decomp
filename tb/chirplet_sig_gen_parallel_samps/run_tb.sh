@@ -9,7 +9,7 @@ sim_name="chirplet_sig_gen_parallel_samps"
 input_vector_fname=$sim_name"_input.txt"
 
 VLD_COEFF=1.0
-RDY_COEFF=0.05
+RDY_COEFF=1.0
 rand_seed=`date +%s`
 echo rand_seed: $rand_seed
 
