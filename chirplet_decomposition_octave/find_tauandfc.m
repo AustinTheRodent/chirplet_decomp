@@ -14,7 +14,7 @@ alpha2_ = 15e12;
 phi_ = 1;
 
 disp " "
-for i = 1:3
+for i = 1:5
     f_c_ = func_fc(beta_,tau_,alpha1_,alpha2_,phi_,t,cutted_sig);
     a= f_c_
     tau_ = func_tau(beta_,f_c_,alpha1_,alpha2_,phi_,t,cutted_sig);

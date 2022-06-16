@@ -1,16 +1,17 @@
 pkg load communications
 
 fs =100e6;
-t = 0:1/fs:10e-6;
+t = 0:1/fs:10e-5;
+length(t)
 beta1 = 1;
-alpha1 = 25e12;
-alpha2 = 15e12;
-tau =2e-6;
+alpha1 = 25e11;
+alpha2 = 15e11;
+tau =2e-5;
 f_c = 5e6;
 phi = pi/2;
 %chirplet sginal kernel
 single_sig= signal_creation(beta1,tau,f_c,alpha1,alpha2,phi,t);
-with_noise = awgn(single_sig,10);
+with_noise = awgn(single_sig,0);
 fc = 100000;
 [b,a] = butter(6,fc/(fs/2));
 dataOut = filter(b,a,with_noise);
@@ -19,7 +20,7 @@ dataOut = filter(b,a,with_noise);
 
 [peak_value,indx] = max(with_noise);
 cutted_sig = zeros(1,length(t));
-cutted_sig (indx-19:indx+20)= with_noise (indx-19:indx+20);
+cutted_sig (max(1,indx-1900):min(length(t),indx+2000))= with_noise (max(1,indx-1900):min(length(t),indx+2000));
 beta_ = abs(peak_value);
 %plot(real(cutted_sig));
 [tau_,f_c_]=find_tauandfc(indx,fs,t,beta_,cutted_sig);

@@ -4,9 +4,10 @@ steps =50;
 nestedsteps=40;
 indx=0;
 for i = 1:steps
-    tau_ = 1.5e-6 + i*((2e-6)/steps);
+    tau_ = 1.5e-5 + i*((2e-5)/steps);
     chirp_sig = beta_*exp(-1*alpha1_*((t-tau_).^2)+1i*2*pi*f_c_*(t-tau_)+1i*phi_+1i*alpha2_*((t-tau_).^2));
-    CT1 = sum(chirp_sig.*conj(single_sig));
+%    CT1 = sum(chirp_sig.*conj(single_sig));
+    CT1 = sum(real(chirp_sig).*real(single_sig));
     if abs(CT1)>max_value
         max_value = abs(CT1);
         indx = i*nestedsteps;
@@ -15,13 +16,14 @@ end
 
 oldindx=indx;
 for i = oldindx-nestedsteps+1:oldindx+nestedsteps-1
-    tau_ = 1.5e-6 + i*((2e-6)/(nestedsteps*steps));
+    tau_ = 1.5e-5 + i*((2e-5)/(nestedsteps*steps));
     chirp_sig = beta_*exp(-1*alpha1_*((t-tau_).^2)+1i*2*pi*f_c_*(t-tau_)+1i*phi_+1i*alpha2_*((t-tau_).^2));
-    CT1 = sum(chirp_sig.*conj(single_sig));
+%    CT1 = sum(chirp_sig.*conj(single_sig));
+    CT1 = sum(real(chirp_sig).*real(single_sig));
     if abs(CT1)>max_value
         max_value = abs(CT1);
         indx = i;
     end
 end 
-tau_ = 1.5e-6 + indx*((2e-6)/(nestedsteps*steps));
+tau_ = 1.5e-5 + indx*((2e-5)/(nestedsteps*steps));
 end
