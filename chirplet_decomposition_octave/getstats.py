@@ -4,6 +4,7 @@ import subprocess
 import numpy
 
 n=100
+
 def getstats():
 	data=[0,0,0,0,0]
 	outp=subprocess.check_output(["octave","optimized_decomposition_1sig.m"])
@@ -46,6 +47,6 @@ phi=numpy.array(phi)
 
 print("t=",numpy.format_float_scientific(numpy.mean(t)),"\tstdev=",numpy.format_float_scientific(numpy.math.sqrt(numpy.var(t))))
 print("fc=",numpy.format_float_scientific(numpy.mean(fc)),"\tstdev=",numpy.format_float_scientific(numpy.math.sqrt(numpy.var(fc))))
-print("alpha1=",numpy.format_float_scientific(numpy.mean(alpha1)),"\tntstdevormvar=",numpy.format_float_scientific(numpy.math.sqrt(numpy.var(alpha1))))
+print("alpha1=",numpy.format_float_scientific(numpy.mean(alpha1)),"\tstdev=",numpy.format_float_scientific(numpy.math.sqrt(numpy.var(alpha1))))
 print("alpha2=",numpy.format_float_scientific(numpy.mean(alpha2)),"\tstdev=",numpy.format_float_scientific(numpy.math.sqrt(numpy.var(alpha2))))
 print("phi=",numpy.format_float_scientific(numpy.mean(phi)),"\tstdev=",numpy.format_float_scientific(numpy.math.sqrt(numpy.var(phi))))

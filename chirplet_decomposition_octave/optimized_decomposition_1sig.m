@@ -11,7 +11,7 @@ f_c = 5e6;
 phi = pi/2;
 %chirplet sginal kernel
 single_sig= signal_creation(beta1,tau,f_c,alpha1,alpha2,phi,t);
-with_noise = awgn(single_sig,0);
+with_noise = awgn(single_sig,30);
 fc = 100000;
 [b,a] = butter(6,fc/(fs/2));
 dataOut = filter(b,a,with_noise);
