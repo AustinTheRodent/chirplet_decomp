@@ -23,7 +23,7 @@ beta=0.25
 
 input_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/input.txt"
 output_fname="$TULIP_WIN/fpga_builds/tb/${sim_name}/hw_output/"
-num_samps=10000
+num_samps=2500
 
 main_arg="none"
 use_user_input="false"

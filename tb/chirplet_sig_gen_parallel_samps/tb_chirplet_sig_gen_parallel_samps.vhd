@@ -267,7 +267,7 @@ architecture behavioral of tb_chirplet_sig_gen_parallel_samps is
   signal dut_din_valid    : std_logic;
   signal dut_din_ready    : std_logic;
   signal dut_din_last     : std_logic;
-  signal dut_dout         : std_logic_vector(C_DWIDTH-1 downto 0);
+  signal dut_dout         : std_logic_vector(32*8-1 downto 0);
   signal dut_dout_valid   : std_logic;
   signal dut_dout_ready   : std_logic;
   signal dut_dout_last    : std_logic;
@@ -557,26 +557,26 @@ begin
   --  wait;
   --  --report "simulation finished" severity failure;
   --end process;
-  --
-  --p_log6_output : process
-  --begin
-  --
-  --  log_bin_axi_stream
-  --  (
-  --    G_OUTPUT_FNAME & "final_mult_imag.bin",
-  --    G_SAMPS_TO_CAPTURE,
-  --    4,
-  --    clk,
-  --    stream_log6_data,
-  --    stream_log6_data_valid,
-  --    stream_log6_data_ready,
-  --    stream_log6_data_last
-  --  );
-  --
-  --  wait for C_CLK_PERIOD*1000;
-  --  report "simulation finished" severity failure;
-  --  wait;
-  --end process;
+
+  p_log6_output : process
+  begin
+  
+    log_bin_axi_stream
+    (
+      G_OUTPUT_FNAME & "final_complex.bin",
+      G_SAMPS_TO_CAPTURE,
+      4*8,
+      clk,
+      dut_dout,
+      dut_dout_valid,
+      dut_dout_ready,
+      dut_dout_last
+    );
+  
+    wait for C_CLK_PERIOD*1000;
+    report "simulation finished" severity failure;
+    wait;
+  end process;
 
   p_input_output_counter : process(clk)
   begin
@@ -633,7 +633,7 @@ begin
       din_valid                 => dut_din_valid,
       din_ready                 => open,
 
-      dout                      => open,
+      dout                      => dut_dout,
       dout_valid                => dut_dout_valid,
       dout_ready                => dut_dout_ready,
       dout_last                 => dut_dout_last

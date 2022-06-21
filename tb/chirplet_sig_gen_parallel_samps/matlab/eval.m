@@ -1,32 +1,15 @@
 clear all;
 
-%{
-fid = fopen("../hw_output/alpha2_times_gauss_imag.bin", "rb");
-alpha2_times_gauss_imag = fread(fid, "float");
+fid = fopen("../hw_output/final_complex.bin", "rb");
+final_interleaved = fread(fid, "int16");
 fclose(fid);
 
-fid = fopen("../hw_output/alpha2_times_gauss_real.bin", "rb");
-alpha2_times_gauss_real = fread(fid, "float");
-fclose(fid);
+final_complex = zeros(length(final_interleaved)/2, 1);
+for i=0:length(final_complex)-1
+  final_complex(i+1) = final_interleaved(i*2+2) + 1j*final_interleaved(i*2+1);
+end
 
-fid = fopen("../hw_output/fc_times_phi_imag.bin", "rb");
-fc_times_phi_imag = fread(fid, "float");
-fclose(fid);
-
-fid = fopen("../hw_output/fc_times_phi_real.bin", "rb");
-fc_times_phi_real = fread(fid, "float");
-fclose(fid);
-%}
-
-fid = fopen("../hw_output/final_mult_imag.bin", "rb");
-final_mult_imag = fread(fid, "float");
-fclose(fid);
-
-fid = fopen("../hw_output/final_mult_real.bin", "rb");
-final_mult_real = fread(fid, "float");
-fclose(fid);
-
-data = final_mult_real;
+hw_data = final_complex/2^15;
 
 time_step=0.00000001
 tau=0.0000595
@@ -36,12 +19,11 @@ alpha2=10000000000
 phi=0.75
 beta=0.25
 
-len = length(data);
+len = length(hw_data);
 %len = 100000;
 
 t = ((0:len-1)*time_step)';
 sw_data = beta*exp(-alpha1*(t-tau).^2 + 1i*2*pi*(phi + f_c*(t-tau) + alpha2*(t-tau).^2));
-hw_data = final_mult_real + 1j*final_mult_imag;
 
 sw_data_exact = ...
   beta*exp(-alpha1*(t-tau).^2 + 1i*2*pi*(...
@@ -58,8 +40,8 @@ energy_diff = abs(sw_sig_energy - hw_sig_energy);
 snr_db = 10*log10(sw_sig_energy/energy_diff)
 
 figure(1); hold on;
-plot(t, real(hw_data))
-plot(t, real(sw_data))
+plot(t, imag(hw_data))
+plot(t, imag(sw_data))
 
 err = zeros(length(hw_data), 1);
 err2 = zeros(length(hw_data), 1);
