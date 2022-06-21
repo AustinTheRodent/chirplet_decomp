@@ -849,7 +849,7 @@ begin
       dout_last       => open
     );
 
-  dout                    <= final_fixed_dout_real(15 downto 0) & final_fixed_dout_imag(15 downto 0);
+  dout                    <= final_fixed_dout_real(16 downto 1) & final_fixed_dout_imag(16 downto 1);
   dout_valid_int          <= '1' when final_fixed_dout_valid = '1' and state = generate_chirp else '0';
   final_fixed_dout_ready  <= dout_ready;
   dout_valid              <= dout_valid_int;
