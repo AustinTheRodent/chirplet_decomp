@@ -137,6 +137,7 @@ begin
     if rising_edge(s_axi_aclk) then
       if a_axi_aresetn = '0' then
         araddr            <= (others => '0');
+        s_axi_rdata       <= (others => '0');
         s_axi_arready_int <= '0';
         s_axi_rvalid_int  <= '0';
         rd_state          <= init;
