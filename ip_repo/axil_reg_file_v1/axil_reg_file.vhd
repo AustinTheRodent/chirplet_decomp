@@ -75,6 +75,10 @@ architecture rtl of axil_reg_file is
 
 begin
 
+  s_axi_rresp   <= (others => '0');
+  s_axi_bresp   <= (others => '0');
+  s_axi_bvalid  <= '1';
+
   s_axi_awready <= s_axi_awready_int;
   s_axi_wready  <= s_axi_wready_int;
 
@@ -126,7 +130,7 @@ begin
   ----------------------------------------------------------------------------
 
   s_axi_arready     <= s_axi_arready_int;
-  s_axi_rvalid_int  <= s_axi_rvalid_int;
+  s_axi_rvalid      <= s_axi_rvalid_int;
 
   p_rd_state_machine : process(s_axi_aclk)
   begin
