@@ -5,8 +5,19 @@ def write_all(template_file_obj, reg_file_obj, constants, registers):
     else:
       type = line[1:line.find(",")]
       num_spaces = int(line[line.find(",")+1:line.find("spaces")])
-      if type == "register names":
-        addr_width = constants[1][1]
+      if type == "constant data width":
+        wr_line = ""
+        for j in range(num_spaces):
+          wr_line += " "
+        wr_line += "constant C_REG_FILE_DATA_WIDTH : integer := %s;\n" % constants[0][1]
+        reg_file_obj.write(wr_line)
+      elif type == "constant address width":
+        wr_line = ""
+        for j in range(num_spaces):
+          wr_line += " "
+        wr_line += "constant C_REG_FILE_ADDR_WIDTH : integer := %s;\n" % constants[1][1]
+        reg_file_obj.write(wr_line)
+      elif type == "register names":
         for i in range(len(registers)):
           wr_line = ""
           for j in range(num_spaces):
@@ -14,7 +25,6 @@ def write_all(template_file_obj, reg_file_obj, constants, registers):
           wr_line += "%s : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);\n" % registers[i][0]
           reg_file_obj.write(wr_line)
       elif type == "register wr pulses":
-        addr_width = constants[1][1]
         for i in range(len(registers)):
           wr_line = ""
           for j in range(num_spaces):
@@ -22,7 +32,6 @@ def write_all(template_file_obj, reg_file_obj, constants, registers):
           wr_line += "%s_wr_pulse : std_logic;\n" % registers[i][0]
           reg_file_obj.write(wr_line)
       elif type == "register rd pulses":
-        addr_width = constants[1][1]
         for i in range(len(registers)):
           wr_line = ""
           for j in range(num_spaces):
@@ -116,7 +125,7 @@ def get_constants(data_file_name):
   num_constants = 0
   for line in data_file_obj:
     if line[0] == "[":
-        num_constants += 1
+      num_constants += 1
   data_file_obj.seek(0)
 
   constants = [[str, str] for i in range(num_constants)]
@@ -192,28 +201,28 @@ def get_registers(data_file_name):
   return registers
 
 def main():
-    print("Starting Register File HDL Generator")
-    template_file_name = "axil_reg_file.template"
-    reg_file_name = "axil_reg_file.vhd"
-    data_file_name = "registers.dat"
-    constants = get_constants(data_file_name)
-    registers = get_registers(data_file_name)
+  print("Starting Register File HDL Generator")
+  template_file_name = "axil_reg_file.template"
+  reg_file_name = "axil_reg_file.vhd"
+  data_file_name = "registers.dat"
+  constants = get_constants(data_file_name)
+  registers = get_registers(data_file_name)
 
-    print(constants)
-    print(registers)
+  print(constants)
+  print(registers)
 
-    template_file_obj = open(template_file_name, "r")
-    reg_file_obj = open(reg_file_name, "w")
-    write_all(template_file_obj, reg_file_obj, constants, registers)
+  template_file_obj = open(template_file_name, "r")
+  reg_file_obj = open(reg_file_name, "w")
+  write_all(template_file_obj, reg_file_obj, constants, registers)
 
-    template_file_obj.close()
-    reg_file_obj.close()
-    return 0
+  template_file_obj.close()
+  reg_file_obj.close()
+  return 0
 
 if __name__ == "__main__":
-    ret = main()
-    if ret == 0:
-        print("register file successfully generated")
-    else:
-        print("register file not generated successfully")
-        print("return code: "+str(ret))
+  ret = main()
+  if ret == 0:
+    print("register file successfully generated")
+  else:
+    print("register file not generated successfully")
+    print("return code: "+str(ret))

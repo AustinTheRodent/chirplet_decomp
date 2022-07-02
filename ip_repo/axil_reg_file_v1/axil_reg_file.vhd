@@ -4,9 +4,8 @@ use ieee.numeric_std.all;
 
 package axil_reg_file_pkg is
 
-  constant C_REG_FILE_DATA_WIDTH  : integer := 32;
-  constant C_REG_FILE_ADDR_WIDTH  : integer := 16;
-  constant C_REG_FILE_MSB_FIRST   : integer := 1;
+  constant C_REG_FILE_DATA_WIDTH : integer := 32;
+  constant C_REG_FILE_ADDR_WIDTH : integer := 16;
 
   type reg_t is record
     TEST_REG : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);

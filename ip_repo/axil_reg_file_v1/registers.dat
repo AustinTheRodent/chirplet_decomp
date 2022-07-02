@@ -3,7 +3,6 @@
 
 [REG_FILE_DATA_WIDTH 32]
 [REG_FILE_ADDR_WIDTH 16]
-[REG_FILE_MSB_FIRST 1]
 
 #name type address reset_val
 
