@@ -9,8 +9,12 @@ package axil_reg_file_pkg is
   constant C_REG_FILE_MSB_FIRST   : integer := 1;
 
   type reg_t is record
-    TEST_REG        : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0); -- RW
-    TEST_REG_pulse  : std_logic;
+    TEST_REG : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
+    TEST_REG2 : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
+    TEST_REG_wr_pulse : std_logic;
+    TEST_REG2_wr_pulse : std_logic;
+    TEST_REG_rd_pulse : std_logic;
+    TEST_REG2_rd_pulse : std_logic;
   end record;
 
   type transaction_state_t is (get_addr, load_reg, write_reg, read_reg);
@@ -51,13 +55,13 @@ entity axil_reg_file is
     s_axi_rresp   : out std_logic_vector(1 downto 0);
     s_axi_rvalid  : out std_logic;
     s_axi_rready  : in  std_logic
-    
   );
 end entity;
 
 architecture rtl of axil_reg_file is
 
-  constant TEST_REG_addr    : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 0;
+  constant TEST_REG_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 0;
+  constant TEST_REG2_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 1;
 
   signal registers          : reg_t;
 
@@ -86,19 +90,27 @@ begin
   begin
     if rising_edge(s_axi_aclk) then
       if a_axi_aresetn = '0' then
+        registers.TEST_REG <= x"DEADBEEF";
+        registers.TEST_REG2 <= x"01234567";
         awaddr            <= (others => '0');
+        registers.TEST_REG_wr_pulse <= '0';
+        registers.TEST_REG2_wr_pulse <= '0';
         s_axi_awready_int <= '0';
         s_axi_wready_int  <= '0';
         wr_state          <= init;
       else
         case wr_state is
           when init =>
+            registers.TEST_REG_wr_pulse <= '0';
+            registers.TEST_REG2_wr_pulse <= '0';
             s_axi_awready_int <= '1';
             s_axi_wready_int  <= '0';
             awaddr            <= (others => '0');
             wr_state          <= get_addr;
 
           when get_addr =>
+            registers.TEST_REG_wr_pulse <= '0';
+            registers.TEST_REG2_wr_pulse <= '0';
             if s_axi_awvalid = '1' and s_axi_awready_int = '1' then
               s_axi_awready_int <= '0';
               s_axi_wready_int  <= '1';
@@ -107,14 +119,19 @@ begin
             end if;
 
           when wr_data =>
-            case awaddr is
-              when std_logic_vector(to_unsigned(TEST_REG_addr, C_REG_FILE_ADDR_WIDTH)) =>
-                registers.TEST_REG <= s_axi_wdata;
-              when others =>
-                null;
-            end case;
 
             if s_axi_wvalid = '1' and s_axi_wready_int = '1' then
+              case awaddr is
+                when std_logic_vector(to_unsigned(TEST_REG_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                  registers.TEST_REG <= s_axi_wdata;
+                  registers.TEST_REG_wr_pulse <= '1';
+                when std_logic_vector(to_unsigned(TEST_REG2_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                  registers.TEST_REG2 <= s_axi_wdata;
+                  registers.TEST_REG2_wr_pulse <= '1';
+                when others =>
+                  null;
+              end case;
+
               s_axi_awready_int <= '1';
               s_axi_wready_int  <= '0';
               wr_state          <= get_addr;
@@ -122,6 +139,7 @@ begin
 
           when others =>
             wr_state <= init;
+
         end case;
       end if;
     end if;
@@ -138,18 +156,24 @@ begin
       if a_axi_aresetn = '0' then
         araddr            <= (others => '0');
         s_axi_rdata       <= (others => '0');
+        registers.TEST_REG_rd_pulse <= '0';
+        registers.TEST_REG2_rd_pulse <= '0';
         s_axi_arready_int <= '0';
         s_axi_rvalid_int  <= '0';
         rd_state          <= init;
       else
         case rd_state is
           when init =>
+            registers.TEST_REG_rd_pulse <= '0';
+            registers.TEST_REG2_rd_pulse <= '0';
             s_axi_arready_int <= '1';
             s_axi_rvalid_int  <= '0';
             araddr            <= (others => '0');
             rd_state          <= get_addr;
 
           when get_addr =>
+            registers.TEST_REG_rd_pulse <= '0';
+            registers.TEST_REG2_rd_pulse <= '0';
             if s_axi_arvalid = '1' and s_axi_arready_int = '1' then
               s_axi_arready_int <= '0';
               s_axi_rvalid_int  <= '0';
@@ -161,11 +185,21 @@ begin
             case araddr is
               when std_logic_vector(to_unsigned(TEST_REG_addr, C_REG_FILE_ADDR_WIDTH)) =>
                 s_axi_rdata <= registers.TEST_REG;
+              when std_logic_vector(to_unsigned(TEST_REG2_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                s_axi_rdata <= registers.TEST_REG2;
               when others =>
                 null;
             end case;
 
             if s_axi_rvalid_int = '1' and s_axi_rready = '1' then
+              case araddr is
+                when std_logic_vector(to_unsigned(TEST_REG_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                  registers.TEST_REG_rd_pulse <= '1';
+                when std_logic_vector(to_unsigned(TEST_REG2_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                  registers.TEST_REG2_rd_pulse <= '1';
+                when others =>
+                  null;
+              end case;
               s_axi_arready_int <= '1';
               s_axi_rvalid_int  <= '0';
               rd_state          <= get_addr;
@@ -175,11 +209,10 @@ begin
 
           when others =>
             rd_state <= init;
+
         end case;
       end if;
     end if;
   end process;
-
-
 
 end rtl;

@@ -8,5 +8,5 @@
 #name type address reset_val
 
 TEST_REG RW 0x0000 0xDEADBEEF
-#   IIR_ENABLE[0]
+TEST_REG2 RW 0x0001 0x01234567
 
