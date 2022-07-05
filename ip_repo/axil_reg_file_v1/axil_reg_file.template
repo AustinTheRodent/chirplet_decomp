@@ -30,12 +30,14 @@ entity axil_reg_file is
     s_axi_aclk    : in  std_logic;
     a_axi_aresetn : in  std_logic;
 
+#read only regs port, 4 spaces#
+
     s_axi_awaddr  : in  std_logic_vector(C_REG_FILE_ADDR_WIDTH-1 downto 0);
     s_axi_awvalid : in  std_logic;
     s_axi_awready : out std_logic;
 
     s_axi_wdata   : in  std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
-    s_axi_wstb    : in  std_logic_vector(C_REG_FILE_DATA_WIDTH/8-1 downto 0);
+    s_axi_wstrb   : in  std_logic_vector(C_REG_FILE_DATA_WIDTH/8-1 downto 0);
     s_axi_wvalid  : in  std_logic;
     s_axi_wready  : out std_logic;
 
@@ -50,7 +52,9 @@ entity axil_reg_file is
     s_axi_rdata   : out std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
     s_axi_rresp   : out std_logic_vector(1 downto 0);
     s_axi_rvalid  : out std_logic;
-    s_axi_rready  : in  std_logic
+    s_axi_rready  : in  std_logic;
+
+    registers_out : out reg_t
   );
 end entity;
 
@@ -74,12 +78,21 @@ architecture rtl of axil_reg_file is
 
 begin
 
+  registers_out <= registers;
+
   s_axi_rresp   <= (others => '0');
   s_axi_bresp   <= (others => '0');
   s_axi_bvalid  <= '1';
 
   s_axi_awready <= s_axi_awready_int;
   s_axi_wready  <= s_axi_wready_int;
+
+  p_read_only_regs : process(s_axi_aclk)
+  begin
+    if rising_edge(s_axi_aclk) then
+#read only regs, 6 spaces#
+    end if;
+  end process;
 
   p_wr_state_machine : process(s_axi_aclk)
   begin

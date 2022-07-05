@@ -92,18 +92,17 @@ def write_all(template_file_obj, reg_file_obj, constants, registers):
             reg_file_obj.write(wr_line)
       elif type == "araddr case":
         for i in range(len(registers)):
-          if registers[i][1] == "RW":
-            wr_line = ""
+          wr_line = ""
 
-            for j in range(num_spaces):
-              wr_line += " "
-            wr_line += "when std_logic_vector(to_unsigned(%s_addr, C_REG_FILE_ADDR_WIDTH)) =>\n" % registers[i][0]
+          for j in range(num_spaces):
+            wr_line += " "
+          wr_line += "when std_logic_vector(to_unsigned(%s_addr, C_REG_FILE_ADDR_WIDTH)) =>\n" % registers[i][0]
 
-            for j in range(num_spaces):
-              wr_line += " "
-            wr_line += "  s_axi_rdata <= registers.%s;\n" % registers[i][0]
+          for j in range(num_spaces):
+            wr_line += " "
+          wr_line += "  s_axi_rdata <= registers.%s;\n" % registers[i][0]
 
-            reg_file_obj.write(wr_line)
+          reg_file_obj.write(wr_line)
       elif type == "reset regs":
         for i in range(len(registers)):
           if registers[i][1] == "RW":
@@ -118,6 +117,22 @@ def write_all(template_file_obj, reg_file_obj, constants, registers):
               wr_line += "registers.%s <= x\"%04X\";\n" % (registers[i][0], registers[i][3])
             if constants[0][1] == 8:
               wr_line += "registers.%s <= x\"%02X\";\n" % (registers[i][0], registers[i][3])
+            reg_file_obj.write(wr_line)
+      elif type == "read only regs":
+        for i in range(len(registers)):
+          if registers[i][1] == "RO":
+            wr_line = ""
+            for j in range(num_spaces):
+              wr_line += " "
+            wr_line += "registers.%s <= s_%s;\n" % (registers[i][0], registers[i][0])
+            reg_file_obj.write(wr_line)
+      elif type == "read only regs port":
+        for i in range(len(registers)):
+          if registers[i][1] == "RO":
+            wr_line = ""
+            for j in range(num_spaces):
+              wr_line += " "
+            wr_line += "s_%s : in  std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);\n" % registers[i][0]
             reg_file_obj.write(wr_line)
 
 def get_constants(data_file_name):
