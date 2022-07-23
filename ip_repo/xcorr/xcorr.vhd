@@ -24,7 +24,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity xcorr is
-  Port (clk,signalvalid,chirpvalid: in STD_LOGIC;
+  Port (clk,reset,signalvalid,chirpvalid: in STD_LOGIC;
   inputchirp: in std_logic_vector(0 to 1023);
   inputchirpimag: in std_logic_vector(0 to 1023);
   inputsignal: in std_logic_vector(0 to 1023);
@@ -85,6 +85,12 @@ begin
     outvalid<=done;
     
     if rising_edge(clk) then
+      -- reset
+      if reset='1' then
+        state<=to_unsigned(0,8);
+        siginstate<=to_unsigned(0,8);
+      end if;
+        
       -- store signal
       write<=signalvalid;
       if signalvalid='1' then
