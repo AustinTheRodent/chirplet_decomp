@@ -148,7 +148,7 @@ begin
   chirp_gen_dout_ready  <= chrp2xcorr_din_ready;
   chrp2xcorr_din_last   <= chirp_gen_dout_last;
 
-  u_chirp_gen_to_xcorr : symbol_expander
+  u_chirp_gen_to_xcorr : entity work.symbol_expander
     generic map
     (
       G_DIN_WIDTH           => chirp_gen_dout'length,
@@ -175,9 +175,14 @@ begin
   xcorr_din_ready <= '1';
 
   g_xcorr_input : for i in 0 to 63 generate
-    xcorr_din_real(i*16 to (i+1)*16-1) <= chrp2xcorr_dout((i+1)*32-16-1 downto (i)*32);
-    xcorr_din_imag(i*16 to (i+1)*16-1) <= chrp2xcorr_dout((i+1)*32-1 downto (i)*32+16);
+    g_flip_bits : for j in 0 to 15 generate
+      xcorr_din_real(i*16 + j) <= chrp2xcorr_dout(i*32 + j);
+      xcorr_din_imag(i*16 + j) <= chrp2xcorr_dout(i*32+16 + j);
+    end generate;
   end generate;
+
+  --xcorr_din_real(i*16 to (i+1)*16-1) <= chrp2xcorr_dout((i+1)*32-16-1 downto (i)*32);
+  --xcorr_din_imag(i*16 to (i+1)*16-1) <= chrp2xcorr_dout((i+1)*32-1 downto (i)*32+16);
 
   u_xcorr : entity work.xcorr
     port map
