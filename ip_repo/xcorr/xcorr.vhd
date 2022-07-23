@@ -89,6 +89,7 @@ begin
       if reset='1' then
         state<=to_unsigned(0,8);
         siginstate<=to_unsigned(0,8);
+        address_in<=std_logic_vector(siginstate);
       end if;
         
       -- store signal
