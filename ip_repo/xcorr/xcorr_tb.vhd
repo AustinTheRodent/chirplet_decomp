@@ -29,17 +29,17 @@ end xcorr_tb;
 
 architecture Behavioral of xcorr_tb is
   component xcorr
-    Port (clk,signalvalid,chirpvalid: in STD_LOGIC;
+    Port (clk,reset,signalvalid,chirpvalid: in STD_LOGIC;
     inputchirp: in std_logic_vector(0 to 1023);
     inputchirpimag: in std_logic_vector(0 to 1023);
     inputsignal: in std_logic_vector(0 to 1023);
-    inputsignalimag: in std_logic_vector(0 to 1023);
+    inputsignimag: in std_logic_vector(0 to 1023);
     outvalid: out STD_LOGIC;
     output: out signed(0 to 95));
   end component;
   type signalbuffer is array(0 to 63) of signed(15 downto 0);
   
-  signal clk,signalvalid,chirpvalid: STD_LOGIC;
+  signal clk,reset,signalvalid,chirpvalid: STD_LOGIC;
   signal inputchirp: std_logic_vector(0 to 1023);
   signal inputchirpimag: std_logic_vector(0 to 1023);
   signal inputsignal: std_logic_vector(0 to 1023);
@@ -49,11 +49,12 @@ architecture Behavioral of xcorr_tb is
   signal tbstate: unsigned(0 to 15):="0000000000000000";
   
 begin
-  UUT: xcorr port map(clk,signalvalid,chirpvalid,inputchirp,inputchirpimag,inputsignal,inputsignalimag,outvalid,output);
+  UUT: xcorr port map(clk,reset,signalvalid,chirpvalid,inputchirp,inputchirpimag,inputsignal,inputsignalimag,outvalid,output);
   
   process
   begin
     -- clock rate of 10MHz, 8 out of 64 inputs generated per cycle so wait 8 cycles between inputs
+    reset<= '0';
     wait for 5 ns;
     clk <= '0';
     wait for 5 ns;
