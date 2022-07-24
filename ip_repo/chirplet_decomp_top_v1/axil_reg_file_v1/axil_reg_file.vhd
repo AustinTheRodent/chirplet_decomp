@@ -18,6 +18,7 @@ package axil_reg_file_pkg is
     DIN_ALPHA2 : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
     DIN_PHI : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
     DIN_BETA : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
+    XCORR_REF_SAMP : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
     CONTROL_wr_pulse : std_logic;
     STATUS_wr_pulse : std_logic;
     CHIRP_GEN_NUM_SAMPS_OUT_wr_pulse : std_logic;
@@ -28,6 +29,7 @@ package axil_reg_file_pkg is
     DIN_ALPHA2_wr_pulse : std_logic;
     DIN_PHI_wr_pulse : std_logic;
     DIN_BETA_wr_pulse : std_logic;
+    XCORR_REF_SAMP_wr_pulse : std_logic;
     CONTROL_rd_pulse : std_logic;
     STATUS_rd_pulse : std_logic;
     CHIRP_GEN_NUM_SAMPS_OUT_rd_pulse : std_logic;
@@ -38,6 +40,7 @@ package axil_reg_file_pkg is
     DIN_ALPHA2_rd_pulse : std_logic;
     DIN_PHI_rd_pulse : std_logic;
     DIN_BETA_rd_pulse : std_logic;
+    XCORR_REF_SAMP_rd_pulse : std_logic;
   end record;
 
   type transaction_state_t is (get_addr, load_reg, write_reg, read_reg);
@@ -97,6 +100,7 @@ architecture rtl of axil_reg_file is
   constant DIN_ALPHA2_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 28;
   constant DIN_PHI_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 32;
   constant DIN_BETA_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 36;
+  constant XCORR_REF_SAMP_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 40;
 
   signal registers          : reg_t;
 
@@ -143,6 +147,7 @@ begin
         registers.DIN_ALPHA2 <= x"00000000";
         registers.DIN_PHI <= x"00000000";
         registers.DIN_BETA <= x"00000000";
+        registers.XCORR_REF_SAMP <= x"00000000";
         awaddr            <= (others => '0');
         registers.CONTROL_wr_pulse <= '0';
         registers.STATUS_wr_pulse <= '0';
@@ -154,6 +159,7 @@ begin
         registers.DIN_ALPHA2_wr_pulse <= '0';
         registers.DIN_PHI_wr_pulse <= '0';
         registers.DIN_BETA_wr_pulse <= '0';
+        registers.XCORR_REF_SAMP_wr_pulse <= '0';
         s_axi_awready_int <= '0';
         s_axi_wready_int  <= '0';
         wr_state          <= init;
@@ -170,6 +176,7 @@ begin
             registers.DIN_ALPHA2_wr_pulse <= '0';
             registers.DIN_PHI_wr_pulse <= '0';
             registers.DIN_BETA_wr_pulse <= '0';
+            registers.XCORR_REF_SAMP_wr_pulse <= '0';
             s_axi_awready_int <= '1';
             s_axi_wready_int  <= '0';
             awaddr            <= (others => '0');
@@ -186,6 +193,7 @@ begin
             registers.DIN_ALPHA2_wr_pulse <= '0';
             registers.DIN_PHI_wr_pulse <= '0';
             registers.DIN_BETA_wr_pulse <= '0';
+            registers.XCORR_REF_SAMP_wr_pulse <= '0';
             if s_axi_awvalid = '1' and s_axi_awready_int = '1' then
               s_axi_awready_int <= '0';
               s_axi_wready_int  <= '1';
@@ -224,6 +232,9 @@ begin
                 when std_logic_vector(to_unsigned(DIN_BETA_addr, C_REG_FILE_ADDR_WIDTH)) =>
                   registers.DIN_BETA <= s_axi_wdata;
                   registers.DIN_BETA_wr_pulse <= '1';
+                when std_logic_vector(to_unsigned(XCORR_REF_SAMP_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                  registers.XCORR_REF_SAMP <= s_axi_wdata;
+                  registers.XCORR_REF_SAMP_wr_pulse <= '1';
                 when others =>
                   null;
               end case;
@@ -262,6 +273,7 @@ begin
         registers.DIN_ALPHA2_rd_pulse <= '0';
         registers.DIN_PHI_rd_pulse <= '0';
         registers.DIN_BETA_rd_pulse <= '0';
+        registers.XCORR_REF_SAMP_rd_pulse <= '0';
         s_axi_arready_int <= '0';
         s_axi_rvalid_int  <= '0';
         rd_state          <= init;
@@ -278,6 +290,7 @@ begin
             registers.DIN_ALPHA2_rd_pulse <= '0';
             registers.DIN_PHI_rd_pulse <= '0';
             registers.DIN_BETA_rd_pulse <= '0';
+            registers.XCORR_REF_SAMP_rd_pulse <= '0';
             s_axi_arready_int <= '1';
             s_axi_rvalid_int  <= '0';
             araddr            <= (others => '0');
@@ -294,6 +307,7 @@ begin
             registers.DIN_ALPHA2_rd_pulse <= '0';
             registers.DIN_PHI_rd_pulse <= '0';
             registers.DIN_BETA_rd_pulse <= '0';
+            registers.XCORR_REF_SAMP_rd_pulse <= '0';
             if s_axi_arvalid = '1' and s_axi_arready_int = '1' then
               s_axi_arready_int <= '0';
               s_axi_rvalid_int  <= '0';
@@ -323,6 +337,8 @@ begin
                 s_axi_rdata <= registers.DIN_PHI;
               when std_logic_vector(to_unsigned(DIN_BETA_addr, C_REG_FILE_ADDR_WIDTH)) =>
                 s_axi_rdata <= registers.DIN_BETA;
+              when std_logic_vector(to_unsigned(XCORR_REF_SAMP_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                s_axi_rdata <= registers.XCORR_REF_SAMP;
               when others =>
                 null;
             end case;
@@ -349,6 +365,8 @@ begin
                   registers.DIN_PHI_rd_pulse <= '1';
                 when std_logic_vector(to_unsigned(DIN_BETA_addr, C_REG_FILE_ADDR_WIDTH)) =>
                   registers.DIN_BETA_rd_pulse <= '1';
+                when std_logic_vector(to_unsigned(XCORR_REF_SAMP_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                  registers.XCORR_REF_SAMP_rd_pulse <= '1';
                 when others =>
                   null;
               end case;

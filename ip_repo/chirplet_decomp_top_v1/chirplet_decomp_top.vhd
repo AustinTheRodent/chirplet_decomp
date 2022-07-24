@@ -41,7 +41,8 @@ architecture rtl of chirplet_decomp_top is
   constant C_NUM_PARALLEL_GENERATORS  : integer := 8;
   constant C_CHIRP2_XCORR_RATIO       : integer := 8;
 
-  signal reset_n                      : std_logic;
+  signal reset                        : std_logic;
+  signal enable                       : std_logic;
   signal registers                    : reg_t;
   signal status_reg                   : std_logic_vector(31 downto 0);
 
@@ -61,29 +62,42 @@ architecture rtl of chirplet_decomp_top is
   signal chrp2xcorr_dout_ready        : std_logic;
   signal chrp2xcorr_dout_last         : std_logic;
 
+  signal ps2xcorr_dout                : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
+  signal ps2xcorr_dout_valid          : std_logic;
+
   signal xcorr_din_real               : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
   signal xcorr_din_imag               : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
   signal xcorr_din_valid              : std_logic;
   signal xcorr_din_ready              : std_logic;
   signal xcorr_din_last               : std_logic;
-  signal xcorr_dout                   : std_logic_vector(95 downto 0);
+  signal xcorr_dout                   : std_logic_vector(0 to 95);
   signal xcorr_dout_valid             : std_logic;
   signal xcorr_dout_ready             : std_logic;
   signal xcorr_dout_last              : std_logic;
 
+  signal xcorr_ref_din_real           : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
+  signal xcorr_ref_din_imag           : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
+  signal xcorr_ref_din_valid          : std_logic;
+
+  signal xcorr_buff_dout              : std_logic_vector(95 to 0);
+  signal xcorr_buff_dout_valid        : std_logic;
+
 begin
 
-  reset_n <= not reset;
+  --reset_n <= not reset;
+  reset   <=  not a_axi_aresetn;
+
+  enable  <= registers.CONTROL(0);
 
   status_reg(31 downto 1) <= (others => '0');
 
   u_registers : entity work.axil_reg_file
     port map
     (
-      s_axi_aclk    => clk,
-      a_axi_aresetn => reset_n,
+      s_axi_aclk    => s_axi_aclk,
+      a_axi_aresetn => a_axi_aresetn,
 
-      s_STATUS      => 
+      s_STATUS      => (others => '0'),
 
       s_axi_awaddr  => s_axi_awaddr,
       s_axi_awvalid => s_axi_awvalid,
@@ -121,7 +135,7 @@ begin
     )
     port map
     (
-      clk                       => clk,
+      clk                       => s_axi_aclk,
       reset                     => reset,
       enable                    => enable,
 
@@ -157,7 +171,7 @@ begin
     )
     port map
     (
-      clk                   => clk,
+      clk                   => s_axi_aclk,
       reset                 => reset,
       enable                => enable,
 
@@ -172,7 +186,31 @@ begin
       dout_last             => chrp2xcorr_dout_last
     );
 
-  xcorr_din_ready <= '1';
+  chrp2xcorr_dout_ready <= '1';
+
+  u_ps_to_xcorr : entity work.symbol_expander
+    generic map
+    (
+      G_DIN_WIDTH           => 32,
+      G_DOUT_OVER_DIN_WIDTH => 64,
+      G_FILL_LSBS_FIRST     => true
+    )
+    port map
+    (
+      clk                   => s_axi_aclk,
+      reset                 => reset,
+      enable                => enable,
+
+      din                   => registers.XCORR_REF_SAMP,
+      din_valid             => registers.XCORR_REF_SAMP_wr_pulse,
+      din_ready             => open,
+      din_last              => '0',
+
+      dout                  => ps2xcorr_dout,
+      dout_valid            => ps2xcorr_dout_valid,
+      dout_ready            => '1',
+      dout_last             => open
+    );
 
   g_xcorr_input : for i in 0 to 63 generate
     g_flip_bits : for j in 0 to 15 generate
@@ -181,23 +219,53 @@ begin
     end generate;
   end generate;
 
-  --xcorr_din_real(i*16 to (i+1)*16-1) <= chrp2xcorr_dout((i+1)*32-16-1 downto (i)*32);
-  --xcorr_din_imag(i*16 to (i+1)*16-1) <= chrp2xcorr_dout((i+1)*32-1 downto (i)*32+16);
+  g_xcorr_ref_input : for i in 0 to 63 generate
+    g_flip_ref_bits : for j in 0 to 15 generate
+      xcorr_ref_din_real(i*16 + j) <= ps2xcorr_dout(i*32 + j);
+      xcorr_ref_din_imag(i*16 + j) <= ps2xcorr_dout(i*32+16 + j);
+    end generate;
+  end generate;
+
+  xcorr_din_valid     <= chrp2xcorr_dout_valid;
+  xcorr_ref_din_valid <= ps2xcorr_dout_valid;
 
   u_xcorr : entity work.xcorr
     port map
     (
-      clk             => clk,
-      signalvalid     => xcorr_din_valid,
-      chirpvalid      => '0',
+      clk             => s_axi_aclk,
 
       inputchirp      => xcorr_din_real,
       inputchirpimag  => xcorr_din_imag,
-      inputsignal     => (others => '0'),
-      inputsignalimag => (others => '0'),
+      chirpvalid      => xcorr_din_valid,
+
+      inputsignal     => xcorr_ref_din_real,
+      inputsignalimag => xcorr_ref_din_imag,
+      signalvalid     => xcorr_ref_din_valid,
 
       output          => xcorr_dout,
       outvalid        => xcorr_dout_valid
+    );
+
+  u_xcorr_buff : entity work.axis_buffer
+    generic map
+    (
+      G_DWIDTH    => xcorr_dout'length
+    )
+    port map
+    (
+      clk         => s_axi_aclk,
+      reset       => reset,
+      enable      => enable,
+
+      din         => xcorr_dout,
+      din_valid   => xcorr_dout_valid,
+      din_ready   => open,
+      din_last    => '0',
+
+      dout        => xcorr_buff_dout,
+      dout_valid  => xcorr_buff_dout_valid,
+      dout_ready  => '1', -- todo: replace with register _rd_pulse
+      dout_last   => open
     );
 
 end rtl;
