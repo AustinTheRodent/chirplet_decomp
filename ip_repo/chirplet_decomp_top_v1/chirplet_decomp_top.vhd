@@ -62,7 +62,7 @@ architecture rtl of chirplet_decomp_top is
   signal chrp2xcorr_dout_ready        : std_logic;
   signal chrp2xcorr_dout_last         : std_logic;
 
-  signal ps2xcorr_dout                : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
+  signal ps2xcorr_dout                : std_logic_vector((C_SAMPLE_DWIDTH)*64-1 downto 0);
   signal ps2xcorr_dout_valid          : std_logic;
 
   signal xcorr_din_real               : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
@@ -79,7 +79,7 @@ architecture rtl of chirplet_decomp_top is
   signal xcorr_ref_din_imag           : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
   signal xcorr_ref_din_valid          : std_logic;
 
-  signal xcorr_buff_dout              : std_logic_vector(95 to 0);
+  signal xcorr_buff_dout              : std_logic_vector(xcorr_dout'range);
   signal xcorr_buff_dout_valid        : std_logic;
 
 begin
@@ -97,7 +97,7 @@ begin
       s_axi_aclk    => s_axi_aclk,
       a_axi_aresetn => a_axi_aresetn,
 
-      s_STATUS      => (others => '0'),
+      s_STATUS      => status_reg,
 
       s_axi_awaddr  => s_axi_awaddr,
       s_axi_awvalid => s_axi_awvalid,
