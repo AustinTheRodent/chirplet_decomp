@@ -30,7 +30,7 @@ entity xcorr is
   inputsignal: in std_logic_vector(0 to 1023);
   inputsignalimag: in std_logic_vector(0 to 1023);
   outvalid: out STD_LOGIC;
-  output: out signed(0 to 95));
+  output: out std_logic_vector(0 to 95));
 end xcorr;
 
 architecture Behavioral of xcorr is
@@ -130,8 +130,8 @@ begin
             end loop;
           else
             done<='1';
-            output(0 to 47)<=partialsum(0);
-            output(48 to 95)<=partialsumimag(0);
+            output(0 to 47)<=std_logic_vector(partialsum(0));
+            output(48 to 95)<=std_logic_vector(partialsumimag(0));
             address_out<="00000000";
           end if;
         end if;
