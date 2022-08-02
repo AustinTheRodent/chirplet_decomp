@@ -71,6 +71,7 @@ architecture rtl of chirplet_decomp_top is
   signal xcorr_din_ready              : std_logic;
   signal xcorr_din_last               : std_logic;
   signal xcorr_dout                   : std_logic_vector(0 to 95);
+  signal xcorr_dout_dt                : std_logic_vector(95 downto 0);
   signal xcorr_dout_valid             : std_logic;
   signal xcorr_dout_ready             : std_logic;
   signal xcorr_dout_last              : std_logic;
@@ -79,12 +80,26 @@ architecture rtl of chirplet_decomp_top is
   signal xcorr_ref_din_imag           : std_logic_vector((C_SAMPLE_DWIDTH/2)*64-1 downto 0);
   signal xcorr_ref_din_valid          : std_logic;
 
-  signal xcorr_buff_dout              : std_logic_vector(xcorr_dout'range);
+  signal xcorr_buff_dout              : std_logic_vector(xcorr_dout_dt'range);
   signal xcorr_buff_dout_valid        : std_logic;
+
+  signal xcorr_dout_re_msbs           : std_logic_vector(31 downto 0);
+  signal xcorr_dout_re_lsbs           : std_logic_vector(31 downto 0);
+  signal xcorr_dout_im_msbs           : std_logic_vector(31 downto 0);
+  signal xcorr_dout_im_lsbs           : std_logic_vector(31 downto 0);
+
+  signal sym_decomp_din               : std_logic_vector(chirp_gen_dout'range);
+  signal sym_decomp_din_valid         : std_logic;
+  signal sym_decomp_din_ready         : std_logic;
+  signal sym_decomp_din_last          : std_logic;
+  signal sym_decomp_dout              : std_logic_vector(31 downto 0);
+  signal sym_decomp_dout_valid        : std_logic;
+  signal sym_decomp_dout_ready        : std_logic;
+  signal sym_decomp_dout_last         : std_logic;
+
 
 begin
 
-  --reset_n <= not reset;
   reset   <=  not a_axi_aresetn;
 
   enable  <= registers.CONTROL(0);
@@ -97,7 +112,12 @@ begin
       s_axi_aclk    => s_axi_aclk,
       a_axi_aresetn => a_axi_aresetn,
 
-      s_STATUS      => status_reg,
+      s_STATUS              => status_reg,
+      s_XCORR_DOUT_RE_MSBS  => xcorr_dout_re_msbs,
+      s_XCORR_DOUT_RE_LSBS  => xcorr_dout_re_lsbs,
+      s_XCORR_DOUT_IM_MSBS  => xcorr_dout_im_msbs,
+      s_XCORR_DOUT_IM_LSBS  => xcorr_dout_im_lsbs,
+      s_CHIRPLET_FEEDBACK   => (others => '0'),
 
       s_axi_awaddr  => s_axi_awaddr,
       s_axi_awvalid => s_axi_awvalid,
@@ -124,8 +144,14 @@ begin
       registers_out => registers
     );
 
+  xcorr_dout_re_msbs      <= x"0000" & xcorr_buff_dout(95 downto 80);
+  xcorr_dout_re_lsbs      <= xcorr_buff_dout(79 downto 48);
+  xcorr_dout_im_msbs      <= x"0000" & xcorr_buff_dout(47 downto 32);
+  xcorr_dout_im_lsbs      <= xcorr_buff_dout(31 downto 0);
+
   chirp_gen_num_samps_out <= registers.CHIRP_GEN_NUM_SAMPS_OUT(15 downto 0);
   status_reg(0)           <= chirp_gen_din_ready;
+  status_reg(1)           <= xcorr_buff_dout_valid;
 
   u_chirp_gen : entity work.chirplet_sig_gen_parallel_samps
     generic map
@@ -158,9 +184,58 @@ begin
     );
 
   chrp2xcorr_din        <= chirp_gen_dout;
-  chrp2xcorr_din_valid  <= chirp_gen_dout_valid;
-  chirp_gen_dout_ready  <= chrp2xcorr_din_ready;
-  chrp2xcorr_din_last   <= chirp_gen_dout_last;
+
+  chrp2xcorr_din_valid <=
+    chirp_gen_dout_valid when registers.CONTROL(1) = '0' else
+    '0';
+
+  chirp_gen_dout_ready <=
+    chrp2xcorr_din_ready when registers.CONTROL(1) = '0' else
+    sym_decomp_din_ready;
+
+  chrp2xcorr_din_last <=
+    chirp_gen_dout_last when registers.CONTROL(1) = '0' else
+    '0';
+
+
+  sym_decomp_din <= chirp_gen_dout;
+
+  sym_decomp_din_valid <=
+    chirp_gen_dout_valid when registers.CONTROL(1) = '1' else
+    '0';
+
+  sym_decomp_din_last <=
+    chirp_gen_dout_last when registers.CONTROL(1) = '1' else
+    '0';
+
+  u_symbol_decomp : entity work.symbol_decomp
+    generic map
+    (
+      G_DIN_WIDTH           => chirp_gen_dout'length,
+      G_DIN_OVER_DOUT_WIDTH => C_NUM_PARALLEL_GENERATORS,
+      G_READ_LSBS_FIRST     => true
+    )
+    port map
+    (
+      clk                   => s_axi_aclk,
+      reset                 => reset,
+      enable                => enable,
+
+      din                   => sym_decomp_din,
+      din_valid             => sym_decomp_din_valid,
+      din_ready             => sym_decomp_din_ready,
+      din_last              => sym_decomp_din_last,
+
+      dout                  => sym_decomp_dout,
+      dout_valid            => sym_decomp_dout_valid,
+      dout_ready            => sym_decomp_dout_ready,
+      dout_last             => sym_decomp_dout_last
+    );
+
+  sym_decomp_dout_ready <=
+    '0' when registers.CONTROL(1) = '0' else
+    registers.CHIRPLET_FEEDBACK_rd_pulse;
+
 
   u_chirp_gen_to_xcorr : entity work.symbol_expander
     generic map
@@ -246,6 +321,10 @@ begin
       outvalid        => xcorr_dout_valid
     );
 
+  g_fix_xcorr_dout : for i in 0 to 95 generate
+    xcorr_dout_dt(i) <= xcorr_dout(i);
+  end generate;
+
   u_xcorr_buff : entity work.axis_buffer
     generic map
     (
@@ -257,14 +336,14 @@ begin
       reset       => reset,
       enable      => enable,
 
-      din         => xcorr_dout,
+      din         => xcorr_dout_dt,
       din_valid   => xcorr_dout_valid,
       din_ready   => open,
       din_last    => '0',
 
       dout        => xcorr_buff_dout,
       dout_valid  => xcorr_buff_dout_valid,
-      dout_ready  => '1', -- todo: replace with register _rd_pulse
+      dout_ready  => registers.XCORR_DOUT_IM_LSBS_rd_pulse,
       dout_last   => open
     );
 
