@@ -257,6 +257,12 @@ architecture behavioral of tb_chirplet_decomp_top is
   constant C_DIN_PHI                  : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := x"0020";
   constant C_DIN_BETA                 : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := x"0024";
   constant C_XCORR_REF_SAMP           : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := x"0028";
+  constant XCORR_DOUT_RE_MSBS         : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := x"002C";
+  constant XCORR_DOUT_RE_LSBS         : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := x"0030";
+  constant XCORR_DOUT_IM_MSBS         : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := x"0034";
+  constant XCORR_DOUT_IM_LSBS         : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := x"0038";
+  constant CHIRPLET_FEEDBACK          : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0) := x"003C";
+
 
   constant C_CLK_PERIOD : time    := 20 ns; -- 50MHz
 
@@ -305,6 +311,8 @@ begin
   p_main : process
     variable address        : std_logic_vector(C_S_AXI_ADDR_WIDTH-1 downto 0);
     variable reg_val        : std_logic_vector(C_S_AXI_DATA_WIDTH-1 downto 0);
+    variable bit_val        : std_logic;
+    variable bit_pos        : integer;
 
     variable v_char_buffer  : character;
     type char_file_t is file of character;
@@ -315,47 +323,117 @@ begin
 
     address := C_CONTROL;
     reg_val := x"00000000";
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
     address := C_CONTROL;
     reg_val := x"00000001";
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
-    address := C_STATUS;
+
+    address := C_XCORR_REF_SAMP;
     reg_val := x"00000000";
-    while reg_val = x"00000000" loop
-      axi_read_reg
-      (
-        axi_lite_bus  => axi_lite_bus,
-        axi_aclk      => clk,
-        address       => address,
-        d_value       => reg_val
-      );
+    for i in 0 to 10048 loop
+      axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
     end loop;
 
-    --todo: C_CHIRP_GEN_NUM_SAMPS_OUT, 16-bits
+
+    address := C_STATUS;
+    bit_pos := 0;
+    bit_val := '0';
+    while bit_val = '0' loop
+      --axi_read_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+      axi_read_bit(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, bit_value => bit_val, bit_position => bit_pos);
+    end loop;
 
     address := C_CHIRP_GEN_NUM_SAMPS_OUT;
     reg_val := std_logic_vector(to_unsigned(G_CHIRPLET_SAMPS, C_S_AXI_DATA_WIDTH));
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+
+    file_open(file_ptr, G_PARAMS_INPUT_FNAME(G_PARAMS_INPUT_FNAME'left to G_PARAMS_INPUT_FNAME'right-3) & "bin");
+    
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    address := C_DIN_T_STEP;
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    address := C_DIN_TAU;
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    address := C_DIN_ALPHA1;
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    address := C_DIN_F_C;
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    address := C_DIN_ALPHA2;
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    address := C_DIN_PHI;
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    for i in 0 to 3 loop
+      read(file_ptr, v_char_buffer);
+      reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
+    end loop;
+    address := C_DIN_BETA;
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    file_close(file_ptr);
+    
+    address := C_STATUS;
+    bit_pos := 1;
+    bit_val := '0';
+    while bit_val = '0' loop
+      --axi_read_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+      axi_read_bit(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, bit_value => bit_val, bit_position => bit_pos);
+    end loop;
+    
+    address := XCORR_DOUT_RE_MSBS;
+    axi_read_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    address := XCORR_DOUT_RE_LSBS;
+    axi_read_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    address := XCORR_DOUT_IM_MSBS;
+    axi_read_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+    
+    address := XCORR_DOUT_IM_LSBS;
+    axi_read_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+
+    ---------------------------------------
+    -- feedback mode:
+    address := C_CONTROL;
+    reg_val := x"00000003";
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
+
+    address := C_STATUS;
+    bit_pos := 0;
+    bit_val := '0';
+    while bit_val = '0' loop
+      axi_read_bit(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, bit_value => bit_val, bit_position => bit_pos);
+    end loop;
 
     file_open(file_ptr, G_PARAMS_INPUT_FNAME(G_PARAMS_INPUT_FNAME'left to G_PARAMS_INPUT_FNAME'right-3) & "bin");
 
@@ -364,105 +442,59 @@ begin
       reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
     end loop;
     address := C_DIN_T_STEP;
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
     for i in 0 to 3 loop
       read(file_ptr, v_char_buffer);
       reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
     end loop;
     address := C_DIN_TAU;
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
     for i in 0 to 3 loop
       read(file_ptr, v_char_buffer);
       reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
     end loop;
     address := C_DIN_ALPHA1;
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
     for i in 0 to 3 loop
       read(file_ptr, v_char_buffer);
       reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
     end loop;
     address := C_DIN_F_C;
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
     for i in 0 to 3 loop
       read(file_ptr, v_char_buffer);
       reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
     end loop;
     address := C_DIN_ALPHA2;
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
     for i in 0 to 3 loop
       read(file_ptr, v_char_buffer);
       reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
     end loop;
     address := C_DIN_PHI;
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
     for i in 0 to 3 loop
       read(file_ptr, v_char_buffer);
       reg_val(i*8+8-1 downto i*8) := std_logic_vector(to_unsigned(character'pos(v_char_buffer), 8));
     end loop;
     address := C_DIN_BETA;
-    axi_write_reg
-    (
-      axi_lite_bus  => axi_lite_bus,
-      axi_aclk      => clk,
-      address       => address,
-      d_value       => reg_val
-    );
+    axi_write_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
 
     file_close(file_ptr);
 
-    address := C_STATUS;
-    reg_val := x"00000000";
-    while reg_val = x"00000000" loop
-      axi_read_reg
-      (
-        axi_lite_bus  => axi_lite_bus,
-        axi_aclk      => clk,
-        address       => address,
-        d_value       => reg_val
-      );
+    wait for C_CLK_PERIOD*100;
+
+    address := CHIRPLET_FEEDBACK;
+    for i in 0 to 1258*8-1 loop
+      axi_read_reg(axi_lite_bus => axi_lite_bus, axi_aclk => clk, address => address, d_value => reg_val);
     end loop;
+
 
     wait for C_CLK_PERIOD*100;
     report "simulation finished" severity failure;
