@@ -22,8 +22,10 @@ vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_gen_v${chirplet_gen_vers
 
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_decomp_top_v1/axil_reg_file_v1/axil_reg_file.vhd
 
+vcom -work work $TULIP_WIN/fpga_builds/ip_repo/symbol_decomp_v1/symbol_decomp.vhd
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/symbol_expander_v1/symbol_expander.vhd
 
+vcom -work work $TULIP_WIN/fpga_builds/ip_repo/xcorr/xcorr_bram.vhd
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/xcorr/xcorr.vhd
 
 vcom -work work $TULIP_WIN/fpga_builds/ip_repo/chirplet_decomp_top_v1/chirplet_decomp_top.vhd
