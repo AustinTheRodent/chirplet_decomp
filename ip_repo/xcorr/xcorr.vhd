@@ -53,38 +53,56 @@ signal address_out: std_logic_vector(7 downto 0);
 signal data_out: std_logic_vector(0 to 2047);
 signal write: std_logic;
     
-component blk_mem_gen_0 is
-  port (
-    clka : IN STD_LOGIC;
-    ena : IN STD_LOGIC;
-    wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-    addra : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    dina : IN STD_LOGIC_VECTOR(2047 DOWNTO 0);
-    clkb : IN STD_LOGIC;
-    enb : IN STD_LOGIC;
-    addrb : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
-    doutb : OUT STD_LOGIC_VECTOR(2047 DOWNTO 0)
-  );
-end component;
+--component blk_mem_gen_0 is
+--  port (
+--    clka : IN STD_LOGIC;
+--    ena : IN STD_LOGIC;
+--    wea : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
+--    addra : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+--    dina : IN STD_LOGIC_VECTOR(2047 DOWNTO 0);
+--    clkb : IN STD_LOGIC;
+--    enb : IN STD_LOGIC;
+--    addrb : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
+--    doutb : OUT STD_LOGIC_VECTOR(2047 DOWNTO 0)
+--  );
+--end component;
     
 begin
 
-  signalram : blk_mem_gen_0 port map(
-    clka=>clk,
-    ena=>write,
-    wea=>"1",
-    addra=>address_in,
-    dina=> data_in,
-    clkb=>clk,
-    enb=>'1',
-    addrb=>address_out,
-    doutb=>data_out);
+  --signalram : blk_mem_gen_0 port map(
+  --  clka=>clk,
+  --  ena=>write,
+  --  wea=>"1",
+  --  addra=>address_in,
+  --  dina=> data_in,
+  --  clkb=>clk,
+  --  enb=>'1',
+  --  addrb=>address_out,
+  --  doutb=>data_out);
+
+  signalram : entity work.xcorr_bram
+    generic map
+    (
+      G_DATA_WIDTH  => 2048,
+      G_ADDR_WIDTH  => 8
+    )
+    port map
+    (
+      clk           => clk,
+
+      we            => write,
+      address_in    => address_in,
+      data_in       => data_in,
+
+      address_out   => address_out,
+      data_out      => data_out
+    );
   
   process(clk) 
   begin 
-    outvalid<=done;
     
     if rising_edge(clk) then
+      outvalid<=done;
       -- store signal
       write<=signalvalid;
       if signalvalid='1' then
