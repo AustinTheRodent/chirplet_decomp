@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 entity chirplet_sig_gen_parallel_samps is
   generic
   (
-    G_NUM_PARALLEL_GENERATORS : integer range 2 to 32
+    G_NUM_PARALLEL_GENERATORS : integer range 2 to 32;
+    G_FILL_LSBS_FIRST         : boolean := true
   );
   port
   (
@@ -306,9 +307,9 @@ begin
         dout_last       => dout_last_int(i)
       );
 
-    dout((i+1)*32-1 downto i*32) <= single_chirp_dout(i);
-    -- todo: reverse order generation as generic parameter
-    -- todo: matlab verification
+    dout((i+1)*32-1 downto i*32) <=
+      single_chirp_dout(i) when G_FILL_LSBS_FIRST = true else
+      single_chirp_dout(G_N-1 - i);
 
   end generate;
 
