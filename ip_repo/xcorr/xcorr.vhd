@@ -90,6 +90,10 @@ begin
         state<=to_unsigned(0,8);
         siginstate<=to_unsigned(0,8);
         address_in<=std_logic_vector(siginstate);
+        for j in 0 to 63 loop 
+          partialsum(j) <= to_signed(0,48);
+          partialsumimag(j) <= to_signed(0,48);
+        end loop;
       end if;
         
       -- store signal
