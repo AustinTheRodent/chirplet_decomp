@@ -45,11 +45,11 @@ end dummyiohandler;
 architecture Behavioral of dummyiohandler is
 
 component xcorr is
-  Port (clk,signalvalid,chirpvalid: in STD_LOGIC;
+  Port (clk,reset,signalvalid,chirpvalid: in STD_LOGIC;
   inputchirp: in std_logic_vector(0 to 1023);
   inputchirpimag: in std_logic_vector(0 to 1023);
   inputsignal: in std_logic_vector(0 to 1023);
-  inputsignalimag: in std_logic_vector(0 to 1023);
+  inputsigimag: in std_logic_vector(0 to 1023);
   outvalid: out STD_LOGIC;
   output: out signed(0 to 95));
 end component;
@@ -60,13 +60,14 @@ signal tmp1: std_logic_vector(0 to 1023);
 signal tmp2: std_logic_vector(0 to 1023);
 signal tmp3: std_logic_vector(0 to 1023);
 signal tmp4: std_logic_vector(0 to 1023);
+signal reset: std_logic := '0';
 
 begin
-    signalram : xcorr port map(clk=>clk,signalvalid=>signalvalid,chirpvalid=>chirpvalid,
+  xcorrmodule : xcorr port map(clk=>clk,reset=>reset,signalvalid=>signalvalid,chirpvalid=>chirpvalid,
   inputchirp=>tmp1,
   inputchirpimag=>tmp2,
   inputsignal=>tmp3,
-  inputsignalimag=>tmp4,
+  inputsigimag=>tmp4,
   outvalid=>outvalid,
   output=>output);
 
