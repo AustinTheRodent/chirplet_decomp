@@ -133,6 +133,7 @@ begin
           if done='1' then
             done<='0';
             state<=to_unsigned(0,8);
+            address_out<=b"00000000";
             finaladditionstate<=to_unsigned(0,4);
             for j in 0 to 63 loop
               partialsum(j) <=to_signed(0,48);
