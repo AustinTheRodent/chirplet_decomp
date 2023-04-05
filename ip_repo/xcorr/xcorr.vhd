@@ -28,7 +28,7 @@ entity xcorr is
   inputchirp: in std_logic_vector(0 to 1023);
   inputchirpimag: in std_logic_vector(0 to 1023);
   inputsignal: in std_logic_vector(0 to 1023);
-  inputsignalimag: in std_logic_vector(0 to 1023);
+  inputsigimag: in std_logic_vector(0 to 1023);
   outvalid: out STD_LOGIC;
   output: out signed(0 to 95));
 end xcorr;
@@ -68,7 +68,6 @@ component blk_mem_gen_0 is
 end component;
     
 begin
-
   signalram : blk_mem_gen_0 port map(
     clka=>clk,
     ena=>write,
@@ -90,22 +89,22 @@ begin
         state<=to_unsigned(0,8);
         siginstate<=to_unsigned(0,8);
         address_in<=std_logic_vector(siginstate);
+        address_out<=b"00000000";
         for j in 0 to 63 loop 
           partialsum(j) <= to_signed(0,48);
           partialsumimag(j) <= to_signed(0,48);
         end loop;
       end if;
-        
+      
       -- store signal
       write<=signalvalid;
       if signalvalid='1' then
-        if siginstate/=157 then
+        if siginstate/=8 then
           address_in<=std_logic_vector(siginstate);
-          data_in<=std_logic_vector(inputsignal)&std_logic_vector(inputsignalimag);
+          data_in<=std_logic_vector(inputsignal)&std_logic_vector(inputsigimag);
         end if;
-        if siginstate=157 then
+        if siginstate=8 then
           siginstate<=to_unsigned(0,8);
-          address_out<="00000000";
         else
           siginstate <= siginstate+1;
         end if;
@@ -113,8 +112,8 @@ begin
     
       -- add chirplet from axi port to partial convolution buffer
       if chirpvalid='1' then
-        if state/=157 then
-          address_out<=std_logic_vector(state+1);
+        if state/=8 then
+          address_out<=std_logic_vector(signed(address_out)+1);
           for j in 0 to 63 loop 
             partialsum(j) <= partialsum(j) + signed(data_out(16*j to 16*j+15)) * signed(inputchirp(16*j to 16*j+15)) + signed(data_out(16*j+1024 to 16*j+15+1024)) * signed(inputchirpimag(16*j to 16*j+15));
             partialsumimag(j) <= partialsumimag(j) + signed(data_out(16*j+1024 to 16*j+15+1024)) * signed(inputchirp(16*j to 16*j+15)) - signed(data_out(16*j to 16*j+15)) * signed(inputchirpimag(16*j to 16*j+15));
@@ -124,16 +123,17 @@ begin
       
       -- final addition and output
       else
-        if state=157 and finaladditionstate/=6 then
+        if state=8 and finaladditionstate/=6 then
           for j in 0 to 31 loop
             partialsum(j) <=partialsum(2*j)+partialsum(2*j+1);
             partialsumimag(j) <=partialsumimag(2*j)+partialsumimag(2*j+1);
           end loop;
           finaladditionstate<=finaladditionstate+1;
-        elsif state=157 then
+        elsif state=8 then
           if done='1' then
             done<='0';
             state<=to_unsigned(0,8);
+            address_out<=b"00000000";
             finaladditionstate<=to_unsigned(0,4);
             for j in 0 to 63 loop
               partialsum(j) <=to_signed(0,48);
@@ -143,7 +143,6 @@ begin
             done<='1';
             output(0 to 47)<=partialsum(0);
             output(48 to 95)<=partialsumimag(0);
-            address_out<="00000000";
           end if;
         end if;
       end if;
