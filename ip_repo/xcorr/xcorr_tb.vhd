@@ -29,17 +29,17 @@ end xcorr_tb;
 
 architecture Behavioral of xcorr_tb is
   component xcorr
-    Port (clk,signalvalid,chirpvalid: in STD_LOGIC;
+    Port (clk,reset,signalvalid,chirpvalid: in STD_LOGIC;
     inputchirp: in std_logic_vector(0 to 1023);
     inputchirpimag: in std_logic_vector(0 to 1023);
     inputsignal: in std_logic_vector(0 to 1023);
-    inputsignalimag: in std_logic_vector(0 to 1023);
+    inputsigimag: in std_logic_vector(0 to 1023);
     outvalid: out STD_LOGIC;
     output: out signed(0 to 95));
   end component;
   type signalbuffer is array(0 to 63) of signed(15 downto 0);
   
-  signal clk,signalvalid,chirpvalid: STD_LOGIC;
+  signal clk,reset,signalvalid,chirpvalid: STD_LOGIC:='0';
   signal inputchirp: std_logic_vector(0 to 1023);
   signal inputchirpimag: std_logic_vector(0 to 1023);
   signal inputsignal: std_logic_vector(0 to 1023);
@@ -49,45 +49,24 @@ architecture Behavioral of xcorr_tb is
   signal tbstate: unsigned(0 to 15):="0000000000000000";
   
 begin
-  UUT: xcorr port map(clk,signalvalid,chirpvalid,inputchirp,inputchirpimag,inputsignal,inputsignalimag,outvalid,output);
+  UUT: xcorr port map(clk,reset,signalvalid,chirpvalid,inputchirp,inputchirpimag,inputsignal,inputsignalimag,outvalid,output);
   
   process
   begin
-    -- clock rate of 10MHz, 8 out of 64 inputs generated per cycle so wait 8 cycles between inputs
-    wait for 5 ns;
+    -- clock rate of 180MHz, 8 out of 64 inputs generated per cycle so wait a few cycles between inputs
+    wait for 2.66666666667 ns; -- 187.5 MHz
     clk <= '0';
-    wait for 5 ns;
+    wait for 2.66666666667 ns;
     clk <= '1';
-    wait for 5 ns;
+    reset<= '0'; -- if reset was triggered, only hold for 1 cycle
+    signalvalid<='0';
+    chirpvalid<='0';
+    wait for 2.66666666667 ns;
     clk <= '0';
-    wait for 5 ns;
-    clk <= '1';
-    wait for 5 ns;
-    clk <= '0';
-    wait for 5 ns;
-    clk <= '1';
-    wait for 5 ns;
-    clk <= '0';
-    wait for 5 ns;
-    clk <= '1';
-    wait for 5 ns;
-    clk <= '0';
-    wait for 5 ns;
-    clk <= '1';
-    wait for 5 ns;
-    clk <= '0';
-    wait for 5 ns;
-    clk <= '1';
-    wait for 5 ns;
-    clk <= '0';
-    wait for 5 ns;
-    clk <= '1';
-    wait for 5 ns;
-    clk <= '0';
-    wait for 5 ns;
+    wait for 2.66666666667 ns;
     clk <= '1';
     
-    if tbstate<316 then
+    if tbstate<8 then
       signalvalid<='1';
       for j in 0 to 63 loop
         inputsignal(16*j to 16*j+15)<=std_logic_vector(to_signed(1,16));
@@ -95,7 +74,11 @@ begin
       end loop;
     end if;
     
-    if tbstate>157 and tbstate<316 then
+    if tbstate=8 then
+      reset<='1';
+    end if;
+    
+    if tbstate>9 and tbstate<18 then
       signalvalid<='0';
       chirpvalid<='1';
       for j in 0 to 63 loop
@@ -103,10 +86,7 @@ begin
         inputchirpimag(16*j to 16*j+15)<=std_logic_vector(to_signed(0,16));
       end loop;
     end if;
-    
-    if tbstate=316 then
-      chirpvalid<='0';
-    end if;
+
     tbstate <=tbstate+1;
   end process;
   process(outvalid,tbstate)
