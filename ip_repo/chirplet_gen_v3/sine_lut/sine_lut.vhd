@@ -5,9 +5,9 @@ use ieee.numeric_std.all;
 entity sine_lut is
   generic
   (
-    G_BUFFER_INPUT  : boolean := false;
-    G_BUFFER_OUTPUT : boolean := false;
-    G_ADDR_WIDTH    : integer := 16
+    G_BUFFER_INPUT  : boolean               := false;
+    G_BUFFER_OUTPUT : boolean               := false;
+    G_ADDR_WIDTH    : integer range 4 to 18 := 16
   );
   port
   (

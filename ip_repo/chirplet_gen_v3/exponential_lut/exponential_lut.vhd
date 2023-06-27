@@ -5,8 +5,9 @@ use ieee.numeric_std.all;
 entity exponential_lut is
   generic
   (
-    G_BUFFER_INPUT  : boolean := false;
-    G_BUFFER_OUTPUT : boolean := false
+    G_BUFFER_INPUT  : boolean               := false;
+    G_BUFFER_OUTPUT : boolean               := false;
+    G_ADDR_WIDTH    : integer range 4 to 18 := 16
   );
   port
   (
@@ -14,7 +15,7 @@ entity exponential_lut is
     reset           : in std_logic;
     enable          : in std_logic;
 
-    din             : in  std_logic_vector(15 downto 0);
+    din             : in  std_logic_vector((G_ADDR_WIDTH-1) downto 0);
     din_valid       : in  std_logic;
     din_ready       : out std_logic;
     din_last        : in  std_logic;
@@ -52,11 +53,16 @@ architecture rtl of exponential_lut is
   end component;
 
   component exponential_rom is
+    generic
+    (
+      G_DATA_WIDTH  : integer range 32 to 32  := 32;
+      G_ADDR_WIDTH  : integer range 4 to 18   := 16
+    );
     port
     (
-      clk           : in  std_logic;
-      address       : in  std_logic_vector(15 downto 0);
-      data_out      : out std_logic_vector(31 downto 0)
+      clk       : in  std_logic;
+      address   : in  std_logic_vector(G_ADDR_WIDTH-1 downto 0);
+      data_out  : out std_logic_vector(G_DATA_WIDTH-1 downto 0)
     );
   end component;
 
@@ -70,11 +76,11 @@ architecture rtl of exponential_lut is
 
   signal buff_enable            : std_logic;
 
-  signal input_buff_din         : std_logic_vector(15 downto 0);
+  signal input_buff_din         : std_logic_vector((G_ADDR_WIDTH-1) downto 0);
   signal input_buff_din_valid   : std_logic;
   signal input_buff_din_ready   : std_logic;
   signal input_buff_din_last    : std_logic;
-  signal input_buff_dout        : std_logic_vector(15 downto 0);
+  signal input_buff_dout        : std_logic_vector((G_ADDR_WIDTH-1) downto 0);
   signal input_buff_dout_valid  : std_logic;
   signal input_buff_dout_ready  : std_logic;
   signal input_buff_dout_last   : std_logic;
@@ -93,8 +99,8 @@ architecture rtl of exponential_lut is
 
   signal bram_buffer            : std_logic_vector(31 downto 0);
 
-  signal bram_rd_addr           : std_logic_vector(15 downto 0);
-  signal bram_addr              : std_logic_vector(15 downto 0);
+  signal bram_rd_addr           : std_logic_vector((G_ADDR_WIDTH-1) downto 0);
+  signal bram_addr              : std_logic_vector((G_ADDR_WIDTH-1) downto 0);
   signal bram_dout              : std_logic_vector(31 downto 0);
 
 begin
@@ -108,7 +114,7 @@ begin
     u_buff_in : axis_buffer
       generic map
       (
-        G_DWIDTH    => 16
+        G_DWIDTH    => G_ADDR_WIDTH
       )
       port map
       (
@@ -211,6 +217,11 @@ begin
   bram_addr     <= bram_rd_addr;
 
   u_bram : exponential_rom
+    generic map
+    (
+      G_DATA_WIDTH  => 32,
+      G_ADDR_WIDTH  => G_ADDR_WIDTH
+    )
     port map
     (
       clk       => clk,

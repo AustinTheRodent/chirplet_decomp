@@ -1,7 +1,11 @@
 
 import numpy as np
 
-for i in range(2**16):
-  print(np.exp(-32.0*(float(i))/(2**16)))
+N = 8
+
+a = 32.0/2**16
+
+for i in range(2**N):
+  print(np.exp(-(2**(16-N))*a*float(i)))
 
 #print(np.exp(0))

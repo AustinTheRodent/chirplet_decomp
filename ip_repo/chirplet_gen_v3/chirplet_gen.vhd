@@ -33,6 +33,7 @@ architecture rtl of chirplet_gen is
 ------------------------------------------------------------------------------
 
   constant C_SIN_LUT_ADDRWIDTH                  : integer range 4 to 18 := 14;
+  constant C_EXP_LUT_ADDRWIDTH                  : integer range 4 to 16 := 13;
   constant C_LUT_ONE                            : unsigned((C_SIN_LUT_ADDRWIDTH+1) downto 0) := to_unsigned(2**((C_SIN_LUT_ADDRWIDTH+1)), (C_SIN_LUT_ADDRWIDTH+2));--  "10" & x"0000";
 
 ------------------------------------------------------------------------------
@@ -114,8 +115,8 @@ architecture rtl of chirplet_gen is
   signal t_minus_tau_sqr_alpha                  : std_logic_vector(31 downto 0);
   signal t_minus_tau_sqr_rescale                : std_logic_vector(31 downto 0);
   signal gaussian_index_dout                    : std_logic_vector(16 downto 0);
-  signal gaussian_index_dout_int                : std_logic_vector(15 downto 0);
-  signal gaussian_index_round                   : std_logic_vector(15 downto 0);
+  signal gaussian_index_dout_int                : std_logic_vector((C_EXP_LUT_ADDRWIDTH-1) downto 0);
+  signal gaussian_index_round                   : std_logic_vector((C_EXP_LUT_ADDRWIDTH-1) downto 0);
   signal exp_lut_dout                           : std_logic_vector(31 downto 0);
 
 ------------------------------------------------------------------------------
@@ -320,7 +321,7 @@ begin
     generic map
     (
       G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -477,7 +478,8 @@ begin
       dout_last       => open
     );
 
-  gaussian_index_dout_int <= gaussian_index_dout(16 downto 1);
+  --gaussian_index_dout_int <= gaussian_index_dout(C_EXP_LUT_ADDRWIDTH downto 1);
+  gaussian_index_dout_int <= gaussian_index_dout(16 downto 16-C_EXP_LUT_ADDRWIDTH + 1);
 
   gaussian_index_round <=
     gaussian_index_dout_int when gaussian_index_dout(0) = '0' else
@@ -491,7 +493,8 @@ begin
     generic map
     (
       G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_OUTPUT => false,
+      G_ADDR_WIDTH    => C_EXP_LUT_ADDRWIDTH
     )
     port map
     (
@@ -806,8 +809,8 @@ begin
       G_INTEGER_BITS  => 1,
       G_FRACT_BITS    => 16,
       G_SIGNED_OUTPUT => true,
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
@@ -832,8 +835,8 @@ begin
       G_INTEGER_BITS  => 1,
       G_FRACT_BITS    => 16,
       G_SIGNED_OUTPUT => true,
-      G_BUFFER_INPUT  => false,
-      G_BUFFER_OUTPUT => false
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
