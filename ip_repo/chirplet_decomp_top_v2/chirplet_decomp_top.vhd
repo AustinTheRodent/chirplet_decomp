@@ -56,6 +56,7 @@ end entity;
 
 architecture rtl of chirplet_decomp_top is
 
+  constant C_FP_DWIDTH                : integer := 32; -- floating point data width
   constant C_SAMPLE_DWIDTH            : integer := 32; -- [bits], real + imaginary component
   constant C_NUM_PARALLEL_GENERATORS  : integer := 8;
   constant C_CHIRP2_XCORR_RATIO       : integer := 8;
@@ -64,7 +65,28 @@ architecture rtl of chirplet_decomp_top is
   signal enable                       : std_logic;
   signal registers                    : reg_t;
 
+
+  signal chirp_gen_fifo_din_tau       : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_alpha1    : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_f_c       : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_alpha2    : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_phi       : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_beta      : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din           : std_logic_vector(C_FP_DWIDTH*6-1 downto 0);
+  signal chirp_gen_fifo_din_valid     : std_logic;
+  signal chirp_gen_fifo_din_ready     : std_logic;
+  signal chirp_gen_fifo_dout_tau      : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_alpha1   : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_f_c      : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_alpha2   : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_phi      : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_beta     : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout          : std_logic_vector(C_FP_DWIDTH*6-1 downto 0);
+  signal chirp_gen_fifo_dout_valid    : std_logic;
+  signal chirp_gen_fifo_dout_ready    : std_logic;
+
   signal chirp_gen_num_samps_out      : std_logic_vector(15 downto 0);
+  signal chirp_gen_din_valid          : std_logic;
   signal chirp_gen_din_ready          : std_logic;
   signal chirp_gen_dout               : std_logic_vector(C_SAMPLE_DWIDTH*C_NUM_PARALLEL_GENERATORS-1 downto 0);
   signal chirp_gen_dout_valid         : std_logic;
@@ -127,33 +149,6 @@ begin
   est_to_ps_dout_ready           <= m_axis_estimate_chirplet_tready;
   m_axis_estimate_chirplet_tlast  <= est_to_ps_dout_last;
 
-  --m_axis_estimate_chirplet_tdata  <= m_axis_estimate_chirplet_tdata_int;
-  --m_axis_estimate_chirplet_tvalid <= m_axis_estimate_chirplet_tvalid_int;
-  --m_axis_estimate_chirplet_tlast  <= m_axis_estimate_chirplet_tlast_int;
-  --
-  --p_dout_stream_test : process(m_axis_estimate_chirplet_aclk)
-  --begin
-  --  if rising_edge(m_axis_estimate_chirplet_aclk) then
-  --    if reset = '1' or enable = '0' then
-  --      m_axis_estimate_chirplet_tdata_int  <= (others => '0');
-  --    else
-  --      if m_axis_estimate_chirplet_tvalid_int = '1' and m_axis_estimate_chirplet_tready = '1' then
-  --        if unsigned(m_axis_estimate_chirplet_tdata_int) = 511 then
-  --          m_axis_estimate_chirplet_tdata_int <= (others => '0');
-  --        else
-  --          m_axis_estimate_chirplet_tdata_int <= std_logic_vector(unsigned(m_axis_estimate_chirplet_tdata_int) + 1);
-  --        end if;
-  --      end if;
-  --    end if;
-  --  end if;
-  --end process;
-  --
-  --m_axis_estimate_chirplet_tvalid_int <= (not reset) and enable;
-  --
-  --m_axis_estimate_chirplet_tlast_int <=
-  --  m_axis_estimate_chirplet_tvalid_int when unsigned(m_axis_estimate_chirplet_tdata_int) = 511 else
-  --  '0';
-
   led_output  <= registers.LED_CONTROL_REG(1 downto 0);
   gpio0       <= registers.GPIO_REG(0);
   gpio1       <= registers.GPIO_REG(1);
@@ -168,7 +163,7 @@ begin
       s_axi_aclk    => s_axi_aclk,
       a_axi_aresetn => a_axi_aresetn,
 
-      s_STATUS_CHIRP_GEN_READY(0)               => chirp_gen_din_ready,
+      s_STATUS_CHIRP_GEN_READY(0)               => chirp_gen_fifo_din_ready,
       s_STATUS_CHIRP_GEN_READY_v                => '1',
 
       s_STATUS_XCORR_DOUT_VALID(0)              => xcorr_buff_dout_valid,
@@ -225,7 +220,59 @@ begin
   xcorr_dout_im_msbs      <= x"0000" & xcorr_buff_dout(47 downto 32);
   xcorr_dout_im_lsbs      <= xcorr_buff_dout(31 downto 0);
 
-  chirp_gen_num_samps_out <= registers.CHIRP_GEN_NUM_SAMPS_OUT_REG(15 downto 0);
+  chirp_gen_fifo_din_tau    <= registers.DIN_TAU_REG;
+  chirp_gen_fifo_din_alpha1 <= registers.DIN_ALPHA1_REG;
+  chirp_gen_fifo_din_f_c    <= registers.DIN_F_C_REG;
+  chirp_gen_fifo_din_alpha2 <= registers.DIN_ALPHA2_REG;
+  chirp_gen_fifo_din_phi    <= registers.DIN_PHI_REG;
+  chirp_gen_fifo_din_beta   <= registers.DIN_BETA_REG;
+
+  chirp_gen_fifo_din <=
+    chirp_gen_fifo_din_tau &
+    chirp_gen_fifo_din_alpha1 &
+    chirp_gen_fifo_din_f_c &
+    chirp_gen_fifo_din_alpha2 &
+    chirp_gen_fifo_din_phi &
+    chirp_gen_fifo_din_beta;
+
+  chirp_gen_fifo_din_valid  <= registers.DIN_BETA_REG_wr_pulse;
+
+  u_chirp_gen_fifo : entity work.axis_sync_fifo
+    generic map
+    (
+      G_ADDR_WIDTH    => 8, -- 256
+      G_DATA_WIDTH    => 6*C_FP_DWIDTH,
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
+    )
+    port map
+    (
+      clk             => s_axi_aclk,
+      reset           => reset,
+      enable          => enable,
+
+      din             => chirp_gen_fifo_din,
+      din_valid       => chirp_gen_fifo_din_valid,
+      din_ready       => chirp_gen_fifo_din_ready,
+      din_last        => '0',
+
+      dout            => chirp_gen_fifo_dout,
+      dout_valid      => chirp_gen_fifo_dout_valid,
+      dout_ready      => chirp_gen_fifo_dout_ready,
+      dout_last       => open
+    );
+
+  chirp_gen_fifo_dout_tau     <= chirp_gen_fifo_dout(6*C_FP_DWIDTH-1 downto 5*C_FP_DWIDTH);
+  chirp_gen_fifo_dout_alpha1  <= chirp_gen_fifo_dout(5*C_FP_DWIDTH-1 downto 4*C_FP_DWIDTH);
+  chirp_gen_fifo_dout_f_c     <= chirp_gen_fifo_dout(4*C_FP_DWIDTH-1 downto 3*C_FP_DWIDTH);
+  chirp_gen_fifo_dout_alpha2  <= chirp_gen_fifo_dout(3*C_FP_DWIDTH-1 downto 2*C_FP_DWIDTH);
+  chirp_gen_fifo_dout_phi     <= chirp_gen_fifo_dout(2*C_FP_DWIDTH-1 downto 1*C_FP_DWIDTH);
+  chirp_gen_fifo_dout_beta    <= chirp_gen_fifo_dout(1*C_FP_DWIDTH-1 downto 0*C_FP_DWIDTH);
+
+  chirp_gen_din_valid         <= chirp_gen_fifo_dout_valid;
+  chirp_gen_fifo_dout_ready   <= chirp_gen_din_ready;
+
+  chirp_gen_num_samps_out     <= registers.CHIRP_GEN_NUM_SAMPS_OUT_REG(15 downto 0);
 
   u_chirp_gen : entity work.chirplet_sig_gen_parallel_samps
     generic map
@@ -240,15 +287,15 @@ begin
       enable                    => enable,
 
       num_samps_out             => chirp_gen_num_samps_out,
-
-      din_tau                   => registers.DIN_TAU_REG,
       din_t_step                => registers.DIN_T_STEP_REG,
-      din_alpha1                => registers.DIN_ALPHA1_REG,
-      din_f_c                   => registers.DIN_F_C_REG,
-      din_alpha2                => registers.DIN_ALPHA2_REG,
-      din_phi                   => registers.DIN_PHI_REG,
-      din_beta                  => registers.DIN_BETA_REG,
-      din_valid                 => registers.DIN_BETA_REG_wr_pulse,
+
+      din_tau                   => chirp_gen_fifo_dout_tau,
+      din_alpha1                => chirp_gen_fifo_dout_alpha1,
+      din_f_c                   => chirp_gen_fifo_dout_f_c,
+      din_alpha2                => chirp_gen_fifo_dout_alpha2,
+      din_phi                   => chirp_gen_fifo_dout_phi,
+      din_beta                  => chirp_gen_fifo_dout_beta,
+      din_valid                 => chirp_gen_din_valid,
       din_ready                 => chirp_gen_din_ready,
 
       dout                      => chirp_gen_dout,
@@ -371,27 +418,53 @@ begin
   --  xcorr_dout_dt(i) <= xcorr_dout(i);
   --end generate;
 
-  u_xcorr_buff : entity work.axis_buffer
+  u_xcorr_buff : entity work.axis_sync_fifo
     generic map
     (
-      G_DWIDTH    => xcorr_dout'length
+      G_ADDR_WIDTH    => 8, -- 256
+      G_DATA_WIDTH    => xcorr_dout'length,
+      G_BUFFER_INPUT  => true,
+      G_BUFFER_OUTPUT => true
     )
     port map
     (
-      clk         => s_axi_aclk,
-      reset       => reset,
-      enable      => enable,
+      clk             => s_axi_aclk,
+      reset           => reset,
+      enable          => enable,
 
-      din         => xcorr_dout,
-      din_valid   => xcorr_dout_valid,
-      din_ready   => open,
-      din_last    => '0',
+      din             => xcorr_dout,
+      din_valid       => xcorr_dout_valid,
+      din_ready       => open,
+      din_last        => '0',
 
-      dout        => xcorr_buff_dout,
-      dout_valid  => xcorr_buff_dout_valid,
-      dout_ready  => xcorr_buff_dout_ready,
-      dout_last   => open
+      dout            => xcorr_buff_dout,
+      dout_valid      => xcorr_buff_dout_valid,
+      dout_ready      => xcorr_buff_dout_ready,
+      dout_last       => open
     );
+
+
+  --u_xcorr_buff : entity work.axis_buffer
+  --  generic map
+  --  (
+  --    G_DWIDTH    => xcorr_dout'length
+  --  )
+  --  port map
+  --  (
+  --    clk         => s_axi_aclk,
+  --    reset       => reset,
+  --    enable      => enable,
+  --
+  --    din         => xcorr_dout,
+  --    din_valid   => xcorr_dout_valid,
+  --    din_ready   => open,
+  --    din_last    => '0',
+  --
+  --    dout        => xcorr_buff_dout,
+  --    dout_valid  => xcorr_buff_dout_valid,
+  --    dout_ready  => xcorr_buff_dout_ready,
+  --    dout_last   => open
+  --  );
 
   xcorr_buff_dout_ready <= registers.XCORR_DOUT_IM_LSBS_REG_rd_pulse or registers.XCORR_DOUT_IM32_REG_rd_pulse;
 
