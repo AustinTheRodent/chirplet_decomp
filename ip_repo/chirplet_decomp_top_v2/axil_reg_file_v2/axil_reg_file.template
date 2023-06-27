@@ -1,0 +1,217 @@
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+package axil_reg_file_pkg is
+
+#constant data width, 2 spaces#
+#constant address width, 2 spaces#
+
+#subreg type, 4 spaces#
+
+  type reg_t is record
+#register names, 4 spaces#
+#subreg declare, 4 spaces#
+#register wr pulses, 4 spaces#
+#register rd pulses, 4 spaces#
+  end record;
+
+  type transaction_state_t is (get_addr, load_reg, write_reg, read_reg);
+
+end package;
+
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+library work;
+use work.axil_reg_file_pkg.all;
+
+entity axil_reg_file is
+  port
+  (
+    s_axi_aclk    : in  std_logic;
+    a_axi_aresetn : in  std_logic;
+
+#read only regs port, 4 spaces#
+
+    s_axi_awaddr  : in  std_logic_vector(C_REG_FILE_ADDR_WIDTH-1 downto 0);
+    s_axi_awvalid : in  std_logic;
+    s_axi_awready : out std_logic;
+
+    s_axi_wdata   : in  std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
+    s_axi_wstrb   : in  std_logic_vector(C_REG_FILE_DATA_WIDTH/8-1 downto 0);
+    s_axi_wvalid  : in  std_logic;
+    s_axi_wready  : out std_logic;
+
+    s_axi_bresp   : out std_logic_vector(1 downto 0);
+    s_axi_bvalid  : out std_logic;
+    s_axi_bready  : in  std_logic;
+
+    s_axi_araddr  : in  std_logic_vector(C_REG_FILE_ADDR_WIDTH-1 downto 0);
+    s_axi_arvalid : in  std_logic;
+    s_axi_arready : out std_logic;
+
+    s_axi_rdata   : out std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
+    s_axi_rresp   : out std_logic_vector(1 downto 0);
+    s_axi_rvalid  : out std_logic;
+    s_axi_rready  : in  std_logic;
+
+    registers_out : out reg_t
+  );
+end entity;
+
+architecture rtl of axil_reg_file is
+
+#register addresses, 2 spaces#
+
+  signal registers          : reg_t;
+
+  signal awaddr             : std_logic_vector(C_REG_FILE_ADDR_WIDTH-1 downto 0);
+  signal araddr             : std_logic_vector(C_REG_FILE_ADDR_WIDTH-1 downto 0);
+  signal s_axi_awready_int  : std_logic;
+  signal s_axi_wready_int   : std_logic;
+  signal s_axi_rvalid_int   : std_logic;
+  signal s_axi_arready_int  : std_logic;
+
+  type wr_state_t is (init, get_addr, wr_data);
+  signal wr_state : wr_state_t;
+  type rd_state_t is (init, get_addr, rd_data);
+  signal rd_state : rd_state_t;
+
+begin
+
+#subreg assign, 2 spaces#
+
+  registers_out <= registers;
+
+  s_axi_rresp   <= (others => '0');
+  s_axi_bresp   <= (others => '0');
+  s_axi_bvalid  <= '1';
+
+  s_axi_awready <= s_axi_awready_int;
+  s_axi_wready  <= s_axi_wready_int;
+
+  p_read_only_regs : process(s_axi_aclk)
+  begin
+    if rising_edge(s_axi_aclk) then
+      if a_axi_aresetn = '0' then
+#reset read only regs, 8 spaces#
+      else
+#read only regs, 8 spaces#
+      end if;
+    end if;
+  end process;
+
+  p_wr_state_machine : process(s_axi_aclk)
+  begin
+    if rising_edge(s_axi_aclk) then
+      if a_axi_aresetn = '0' then
+#reset regs, 8 spaces#
+        awaddr            <= (others => '0');
+#wr pulse eq zero, 8 spaces#
+        s_axi_awready_int <= '0';
+        s_axi_wready_int  <= '0';
+        wr_state          <= init;
+      else
+        case wr_state is
+          when init =>
+#wr pulse eq zero, 12 spaces#
+            s_axi_awready_int <= '1';
+            s_axi_wready_int  <= '0';
+            awaddr            <= (others => '0');
+            wr_state          <= get_addr;
+
+          when get_addr =>
+#wr pulse eq zero, 12 spaces#
+            if s_axi_awvalid = '1' and s_axi_awready_int = '1' then
+              s_axi_awready_int <= '0';
+              s_axi_wready_int  <= '1';
+              awaddr            <= s_axi_awaddr;
+              wr_state          <= wr_data;
+            end if;
+
+          when wr_data =>
+
+            if s_axi_wvalid = '1' and s_axi_wready_int = '1' then
+              case awaddr is
+#awaddr case, 16 spaces#
+                when others =>
+                  null;
+              end case;
+
+              s_axi_awready_int <= '1';
+              s_axi_wready_int  <= '0';
+              wr_state          <= get_addr;
+            end if;
+
+          when others =>
+            wr_state <= init;
+
+        end case;
+      end if;
+    end if;
+  end process;
+
+  ----------------------------------------------------------------------------
+
+  s_axi_arready     <= s_axi_arready_int;
+  s_axi_rvalid      <= s_axi_rvalid_int;
+
+  p_rd_state_machine : process(s_axi_aclk)
+  begin
+    if rising_edge(s_axi_aclk) then
+      if a_axi_aresetn = '0' then
+        araddr            <= (others => '0');
+        s_axi_rdata       <= (others => '0');
+#rd pulse eq zero, 8 spaces#
+        s_axi_arready_int <= '0';
+        s_axi_rvalid_int  <= '0';
+        rd_state          <= init;
+      else
+        case rd_state is
+          when init =>
+#rd pulse eq zero, 12 spaces#
+            s_axi_arready_int <= '1';
+            s_axi_rvalid_int  <= '0';
+            araddr            <= (others => '0');
+            rd_state          <= get_addr;
+
+          when get_addr =>
+#rd pulse eq zero, 12 spaces#
+            if s_axi_arvalid = '1' and s_axi_arready_int = '1' then
+              s_axi_arready_int <= '0';
+              s_axi_rvalid_int  <= '0';
+              araddr            <= s_axi_araddr;
+              rd_state          <= rd_data;
+            end if;
+
+          when rd_data =>
+            case araddr is
+#araddr case, 14 spaces#
+              when others =>
+                null;
+            end case;
+
+            if s_axi_rvalid_int = '1' and s_axi_rready = '1' then
+              case araddr is
+#rd pulse eq one, 16 spaces#
+                when others =>
+                  null;
+              end case;
+              s_axi_arready_int <= '1';
+              s_axi_rvalid_int  <= '0';
+              rd_state          <= get_addr;
+            else
+              s_axi_rvalid_int  <= '1';
+            end if;
+
+          when others =>
+            rd_state <= init;
+
+        end case;
+      end if;
+    end if;
+  end process;
+
+end rtl;
