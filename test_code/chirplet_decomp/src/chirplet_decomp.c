@@ -22,11 +22,12 @@ typedef struct
   union    ufloat beta;
 } chirplet_param_t;
 
-#define MAX_SAMPLES 50000
+#define MAX_SAMPLES 25000
 #define CHIRP_LEN 512
 #define SAMPS_PER_CLK 8
 
-int16_t received_samples[MAX_SAMPLES];
+int16_t received_samples_re[MAX_SAMPLES];
+int16_t received_samples_im[MAX_SAMPLES];
 
 void get_max(int32_t* return_value, uint32_t* return_index, int16_t* input_array, uint32_t input_len);
 find_tauandfc(chirplet_param_t* chirplet_param, uint32_t start_index, uint32_t* received_samples);
@@ -68,7 +69,7 @@ int main (int argc, char *argv[])
 
 }
 
-void get_max(int32_t* return_value, uint32_t* return_index, int16_t* input_array, uint32_t input_len)
+void get_max(int32_t* return_value, uint32_t* return_index, int16_t* input_array_re, int16_t* input_array_im, uint32_t input_len)
 {
   // make sure to find max magnitude, input array should be complex valued
 }
