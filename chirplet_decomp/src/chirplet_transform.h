@@ -3,6 +3,7 @@
 
 #define CHIRP_LEN 512
 #define SAMPS_PER_CLK 8
+#define RESCALE16 32678
 
 #include <stdint.h>
 

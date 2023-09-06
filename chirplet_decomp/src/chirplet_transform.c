@@ -3,8 +3,6 @@
 #include <math.h>
 #include "chirplet_transform.h"
 
-#define RESCALE16 32678
-
 void signal_creation
 (
   int16_t return_signal_re[CHIRP_LEN],
