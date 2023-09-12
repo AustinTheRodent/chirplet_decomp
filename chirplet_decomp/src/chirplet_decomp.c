@@ -10,8 +10,22 @@
 
 #define MAX_SAMPLES 50000
 
+#define C_FMIN 0e6
+#define C_FMAX 50e6
+
+#define C_A1MIN 1e12
+#define C_A1MAX 1e15
+
+#define C_A2MIN -2e13
+#define C_A2MAX 2e13
+
+
 int16_t received_samples_re[MAX_SAMPLES];
 int16_t received_samples_im[MAX_SAMPLES];
+int16_t received_samples_orig_re[MAX_SAMPLES];
+int16_t received_samples_orig_im[MAX_SAMPLES];
+int16_t estimate_sig_re[MAX_SAMPLES];
+int16_t estimate_sig_im[MAX_SAMPLES];
 
 uint16_t get_samples(char* file_name);
 void get_max_energy(int32_t* return_energy, uint32_t* return_index, int16_t* input_array_re, int16_t* input_array_im, uint32_t input_len);
@@ -37,7 +51,8 @@ void estimate
 
 int main (int argc, char *argv[])
 {
-  int i,j;
+  int unused;
+  int i,j,chirp_count;
   uint32_t max_index;
   int32_t max_value;
   uint32_t input_len;
@@ -65,61 +80,109 @@ int main (int argc, char *argv[])
   float f_c_;
   float phi_;
 
+  FILE* fid;
+
   chirplet_param.chirp_gen_num_samps_out = CHIRP_LEN/SAMPS_PER_CLK; // 64 cycles of 8 samps per cycle = 512 samps total
-  //chirplet_param.t_step.f = time_step;
-  //chirplet_param.beta.f   = beta;
-  //chirplet_param.alpha1.f = alpha1;
-  //chirplet_param.alpha2.f = alpha2;
-  //chirplet_param.tau.f    = tau;
-  //chirplet_param.f_c.f    = f_c;
-  //chirplet_param.phi.f    = phi;
 
   input_len = get_samples("./other/reference.bin");
 
-  get_max_energy(&max_value, &max_index, received_samples_re, received_samples_im, input_len);
-
-  //chirplet_param.beta.f = (float)0.5;
-
-  if( (int32_t)max_index - (int32_t)(CHIRP_LEN/2) < 0 )
+  for(i = 0 ; i < MAX_SAMPLES ; i++)
   {
-    start_index = 0;
-  }
-  else
-  {
-    start_index = max_index - (CHIRP_LEN/2);
+    received_samples_orig_re[i] = received_samples_re[i];
+    received_samples_orig_im[i] = received_samples_im[i];
+
+    estimate_sig_re[i] = 0;
+    estimate_sig_im[i] = 0;
   }
 
-  i = 0;
-  for(j = start_index ; j < start_index + CHIRP_LEN ; j++)
+  for(chirp_count = 0 ; chirp_count < 100 ; chirp_count++)//13
   {
-    cut_sig_re[i] = received_samples_re[j];
-    cut_sig_im[i] = received_samples_im[j];
-    i++;
+    get_max_energy(&max_value, &max_index, received_samples_re, received_samples_im, input_len);
+    printf("max_value: %i\n", max_value);
+    if(max_value < 55000)
+    {
+      break;
+    }
+
+    if( (int32_t)max_index - (int32_t)(CHIRP_LEN/2) < 0 )
+    {
+      start_index = 0;
+    }
+    else if((int32_t)max_index - (int32_t)(CHIRP_LEN/2) > input_len)
+    {
+      start_index = input_len - CHIRP_LEN;
+    }
+    else
+    {
+      start_index = max_index - (CHIRP_LEN/2);
+    }
+
+    i = 0;
+    for(j = start_index ; j < start_index + CHIRP_LEN ; j++)
+    {
+      cut_sig_re[i] = received_samples_re[j];
+      cut_sig_im[i] = received_samples_im[j];
+      i++;
+    }
+    estimate(&chirplet_param, tau_, f_c_, max_index - start_index, alpha1_, alpha2_, time_step, cut_sig_re, cut_sig_im);
+    signal_creation(estimate_chirp_re, estimate_chirp_im, &chirplet_param);
+
+    i = 0;
+    for(j = start_index ; j < start_index+CHIRP_LEN ; j++)
+    {
+      received_samples_re[j] = received_samples_re[j] - estimate_chirp_re[i];
+      received_samples_im[j] = received_samples_im[j] - estimate_chirp_im[i];
+
+      estimate_sig_re[j] = estimate_sig_re[j] + estimate_chirp_re[i];
+      estimate_sig_im[j] = estimate_sig_im[j] + estimate_chirp_im[i];
+      i++;
+    }
+
   }
 
-  //chirplet_param.tau.f = (max_index - start_index)*chirplet_param.t_step.f;
-  //
-  //signal_creation
-  //(
-  //  estimate_chirp_re,
-  //  estimate_chirp_im,
-  //  &chirplet_param
-  //);
-  //
-  //for(i = 0 ; i < CHIRP_LEN ; i++)
-  //{
-  //  printf("%i\n", estimate_chirp_re[i]);
-  //}
+  printf("chirp_count: %i\n", chirp_count);
 
-  estimate(&chirplet_param, tau_, f_c_, max_index - start_index, alpha1_, alpha2_, time_step, cut_sig_re, cut_sig_im);
+  fid = fopen("./other/estimate_output_re.bin", "wb");
+  fwrite(estimate_sig_re, sizeof(int16_t), input_len, fid);
+  fclose(fid);
 
+  fid = fopen("./other/estimate_output_im.bin", "wb");
+  fwrite(estimate_sig_im, sizeof(int16_t), input_len, fid);
+  fclose(fid);
+
+
+  fid = fopen("./other/residual_re.bin", "wb");
+  fwrite(received_samples_re, sizeof(int16_t), input_len, fid);
+  fclose(fid);
+
+  fid = fopen("./other/residual_im.bin", "wb");
+  fwrite(received_samples_im, sizeof(int16_t), input_len, fid);
+  fclose(fid);
+
+
+  fid = fopen("./other/current_chirp_re.bin", "wb");
+  fwrite(estimate_chirp_re, sizeof(int16_t), CHIRP_LEN, fid);
+  fclose(fid);
+
+  fid = fopen("./other/current_chirp_im.bin", "wb");
+  fwrite(estimate_chirp_im, sizeof(int16_t), CHIRP_LEN, fid);
+  fclose(fid);
+
+
+  fid = fopen("./other/cut_sig_re.bin", "wb");
+  fwrite(cut_sig_re, sizeof(int16_t), CHIRP_LEN, fid);
+  fclose(fid);
+
+  fid = fopen("./other/cut_sig_im.bin", "wb");
+  fwrite(cut_sig_im, sizeof(int16_t), CHIRP_LEN, fid);
+  fclose(fid);
 
   printf("tau_    : %0.16f\n" , chirplet_param.tau.f    );
   printf("f_c_    : %0.16f\n" , chirplet_param.f_c.f );
   printf("alpha1_ : %0.16f\n" , chirplet_param.alpha1.f    );
   printf("alpha2_ : %0.16f\n" , chirplet_param.alpha2.f );
   printf("phi_    : %0.16f\n" , chirplet_param.phi.f    );
-  printf("beta_   : %0.16f\n" , chirplet_param.beta.f   );
+  printf("beta_   : %0.16f\n\n" , chirplet_param.beta.f   );
 
   return 0;
 
@@ -167,7 +230,6 @@ void get_max_energy(int32_t* return_energy, uint32_t* return_index, int16_t inpu
 
 float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN])
 {
-  // todo: make min/max range not an magic #
   int i;
   uint32_t max_value = 0;
   const int16_t steps = 50;
@@ -175,6 +237,9 @@ float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_,
   float f_c_;
   uint32_t CT1;
   chirplet_param_t params;
+
+  const float fmin = C_FMIN;
+  const float fmax = C_FMAX;
 
   params.t_step.f = time_step;
   params.beta.f   = beta_;
@@ -186,9 +251,9 @@ float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_,
 
   int16_t indx = 0;
   int16_t oldindx = 0;
-  for(i = 0 ; i < steps ; i++)
+  for(i = 0 ; i <= steps ; i++)
   {
-    params.f_c.f = 4e6 + (float)i*((2e6)/((float)steps));
+    params.f_c.f = fmin + (float)i*((fmax-fmin)/((float)steps));
     CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
 
     if(CT1 > max_value)
@@ -199,9 +264,14 @@ float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_,
   }
 
   oldindx = indx;
-  for(i = oldindx-nestedsteps ; i < oldindx+nestedsteps ; i++)
+  if(oldindx < nestedsteps)
   {
-    params.f_c.f = 4e6 + (float)i*((2e6)/(nestedsteps*steps));
+    oldindx = nestedsteps;
+    indx = nestedsteps;
+  }
+  for(i = oldindx-nestedsteps ; i <= oldindx+nestedsteps ; i++)
+  {
+    params.f_c.f = fmin + (float)i*((fmax-fmin)/(nestedsteps*steps));
     CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
 
     if(CT1 > max_value)
@@ -211,7 +281,7 @@ float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_,
     }
   }
 
-  f_c_ = 4e6 + (float)indx*((2e6)/(float)(nestedsteps*steps));
+  f_c_ = fmin + (float)indx*((fmax-fmin)/(float)(nestedsteps*steps));
   return f_c_;
 }
 
@@ -236,7 +306,7 @@ float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_
 
   int16_t indx = 0;
   int16_t oldindx = 0;
-  for(i = 0 ; i < steps ; i++)
+  for(i = 0 ; i <= steps ; i++)
   {
     params.tau.f = (float)i*((tau_max)/steps);
     CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
@@ -249,7 +319,12 @@ float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_
   }
 
   oldindx = indx;
-  for(i = oldindx-nestedsteps ; i < oldindx+nestedsteps ; i++)
+  if(oldindx < nestedsteps)
+  {
+    oldindx = nestedsteps;
+    indx = nestedsteps;
+  }
+  for(i = oldindx-nestedsteps ; i <= oldindx+nestedsteps ; i++)
   {
     params.tau.f = i*((tau_max)/(nestedsteps*steps));
     CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
@@ -267,7 +342,6 @@ float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_
 
 float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN])
 {
-  // todo: make min/max range not an magic #
   int i;
   uint32_t max_value = 0;
   const int16_t steps = 50;
@@ -275,6 +349,9 @@ float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_
   float alpha2_;
   uint32_t CT1;
   chirplet_param_t params;
+
+  const float a2min = C_A2MIN;
+  const float a2max = C_A2MAX;
 
   params.t_step.f = time_step;
   params.beta.f   = beta_;
@@ -286,9 +363,9 @@ float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_
 
   int16_t indx = 0;
   int16_t oldindx = 0;
-  for(i = 0 ; i < steps ; i++)
+  for(i = 0 ; i <= steps ; i++)
   {
-    params.alpha2.f = 1e12 + (float)i*((1e12)/((float)steps));
+    params.alpha2.f = a2min + (float)i*((a2max-a2min)/((float)steps));
     CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
 
     if(CT1 > max_value)
@@ -299,9 +376,14 @@ float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_
   }
 
   oldindx = indx;
-  for(i = oldindx-nestedsteps ; i < oldindx+nestedsteps ; i++)
+  if(oldindx < nestedsteps)
   {
-    params.alpha2.f = 1e12 + (float)i*((1e12)/(nestedsteps*steps));
+    oldindx = nestedsteps;
+    indx = nestedsteps;
+  }
+  for(i = oldindx-nestedsteps ; i <= oldindx+nestedsteps ; i++)
+  {
+    params.alpha2.f = a2min + (float)i*((a2max-a2min)/(nestedsteps*steps));
     CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
 
     if(CT1 > max_value)
@@ -311,13 +393,12 @@ float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_
     }
   }
 
-  alpha2_ = 1e12 + (float)indx*((1e12)/(float)(nestedsteps*steps));
+  alpha2_ = a2min + (float)indx*((a2max-a2min)/(float)(nestedsteps*steps));
   return alpha2_;
 }
 
 float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN])
 {
-  // todo: make min/max range not an magic #
   int i;
   uint32_t max_value = 0;
   const int16_t steps = 50;
@@ -326,6 +407,9 @@ float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_
   uint32_t CT1;
   float beta_alpha1;
   chirplet_param_t params;
+
+  const float a1min = C_A1MIN;
+  const float a1max = C_A1MAX;
 
   params.t_step.f = time_step;
   //params.beta.f   = beta_;
@@ -337,12 +421,11 @@ float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_
 
   int16_t indx = 0;
   int16_t oldindx = 0;
-  for(i = 0 ; i < steps ; i++)
+  for(i = 0 ; i <= steps ; i++)
   {
-    params.alpha1.f = 2e12 + (float)i*((1e12)/((float)steps));
-    params.beta.f = 1e-3 * pow(2.0*M_PI*params.alpha1.f, 0.25);
+    params.alpha1.f = a1min + (float)i*((a1max-a1min)/((float)steps));
+    params.beta.f = 4e-4 * pow(2.0*M_PI*params.alpha1.f, 0.25);
     CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
-
     if(CT1 > max_value)
     {
       max_value = CT1;
@@ -351,20 +434,23 @@ float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_
   }
 
   oldindx = indx;
-  for(i = oldindx-nestedsteps ; i < oldindx+nestedsteps ; i++)
+  if(oldindx < nestedsteps)
   {
-    params.alpha1.f = 2e12 + (float)i*((1e12)/(nestedsteps*steps));
-    params.beta.f = 1e-4 * pow(2.0*M_PI*params.alpha1.f, 0.25);
+    oldindx = nestedsteps;
+    indx = nestedsteps;
+  }
+  for(i = oldindx-nestedsteps ; i <= oldindx+nestedsteps ; i++)
+  {
+    params.alpha1.f = a1min + (float)i*((a1max-a1min)/(nestedsteps*steps));
+    params.beta.f = 4e-4 * pow(2.0*M_PI*params.alpha1.f, 0.25);
     CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
-
     if(CT1 > max_value)
     {
       max_value = CT1;
       indx = i;
     }
   }
-
-  alpha1_ = 2e12 + (float)indx*((1e12)/(float)(nestedsteps*steps));
+  alpha1_ = a1min + (float)indx*((a1max-a1min)/(float)(nestedsteps*steps));
   return alpha1_;
 }
 
@@ -412,7 +498,24 @@ void func_phi_beta(float* return_phi_, float* return_beta_, float f_c_, float al
     ss = s_re + s_im;
   }
 
-  phi_ = atan(x_conj_sum_im/x_conj_sum_re);
+  if(x_conj_sum_im >= 0 && x_conj_sum_re >= 0)
+  {
+    phi_ = atan(x_conj_sum_im/x_conj_sum_re);
+  }
+  else if(x_conj_sum_im >= 0 && x_conj_sum_re < 0)
+  {
+    phi_ = atan(x_conj_sum_im/x_conj_sum_re) + M_PI;
+  }
+  else if(x_conj_sum_im < 0 && x_conj_sum_re < 0)
+  {
+    phi_ = atan(x_conj_sum_im/x_conj_sum_re) - M_PI;
+  }
+  else
+  {
+    phi_ = atan(x_conj_sum_im/x_conj_sum_re);
+  }
+
+  //phi_ = atan(x_conj_sum_im/x_conj_sum_re);
   beta_ = sqrt((x_conj_sum_re*x_conj_sum_re + x_conj_sum_im*x_conj_sum_im)/(ss*ss));
 
   *return_phi_ = phi_;
