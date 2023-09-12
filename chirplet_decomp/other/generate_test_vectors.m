@@ -1,21 +1,71 @@
 clear all;
 pkg load communications;
 
+fid = fopen("ForAustin2_singel_channel.csv", "r");
+data = fscanf(fid, "%f\n");
+fclose(fid);
+
+data = data*2;
+data = resample(data, 1, 8);
+
+b = remez(128, [0 0.45 0.5 1], [1 1 0 0]);
+
+data_shift = data.*exp(-1i*pi*0.5*(0:length(data)-1)');
+data_shift = filter(b, 1, data_shift);
+data_shift = data_shift.*exp(1i*pi*0.5*(0:length(data_shift)-1)');
+
+w = -1:2/length(data):1-2/length(data);
+
+figure();hold on;
+plot(w, 20*log10(abs(fftshift(fft(data_shift)))));
+plot(w, 20*log10(abs(fftshift(fft(data)))));
+
+%figure();hold on;
+%plot(data);
+%plot(real(data_shift(64:end)));
+
+data_re = real(data_shift);
+data_im = imag(data_shift);
+
+data_re = round(data_re);
+data_im = round(data_im);
+
+%figure();
+%plot(data_im);
+
+data_ileved = zeros(2*length(data_re), 1);
+for i=0:length(data_re)-1
+  data_ileved(i*2+1) = data_re(i+1);
+  data_ileved(i*2+2) = data_im(i+1);
+end
+
+reference_fname = "reference.bin";
+fid = fopen(reference_fname, "w");
+
+fwrite(fid, length(data_ileved)/2, "int16");
+fwrite(fid, data_ileved, "int16");
+fclose(fid);
+
+
+
+
+return;
 reference_fname = "reference.bin";
 parameters_fname = "chirplet_parameters.bin";
 %estimate_fname = "estimate_chirp.txt";
+
 
 N_samps = 512*10;
 
 fs = 100e6;
 time_step=1/fs
 
-beta = 1;
-alpha1 = 25e11;
-alpha2 = 15e11;
+beta = 0.665;
+alpha1 = 28e11;
+alpha2 = 14e11;
 tau = 2e-5;
 f_c = 5e6;
-phi = pi/2;
+phi = pi/4;
 
 len = N_samps;
 %len = 100000;
