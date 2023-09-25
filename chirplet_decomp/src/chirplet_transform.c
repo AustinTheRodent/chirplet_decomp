@@ -5,8 +5,8 @@
 
 void signal_creation
 (
-  int16_t return_signal_re[CHIRP_LEN],
-  int16_t return_signal_im[CHIRP_LEN],
+  int16_t* return_signal_re,
+  int16_t* return_signal_im,
   chirplet_param_t* chirp_params
 )
 {
@@ -34,7 +34,7 @@ void signal_creation
   }
 }
 
-uint32_t chirplet_transform_energy(chirplet_param_t* estimate_params, int16_t ref_re[CHIRP_LEN], int16_t ref_im[CHIRP_LEN])
+uint32_t chirplet_transform_energy(chirplet_param_t* estimate_params, int16_t* ref_re, int16_t* ref_im)
 {
   float chirp_sig_re_f;
   float chirp_sig_im_f;

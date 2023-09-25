@@ -22,19 +22,17 @@
 
 int16_t received_samples_re[MAX_SAMPLES];
 int16_t received_samples_im[MAX_SAMPLES];
-int16_t received_samples_orig_re[MAX_SAMPLES];
-int16_t received_samples_orig_im[MAX_SAMPLES];
 int16_t estimate_sig_re[MAX_SAMPLES];
 int16_t estimate_sig_im[MAX_SAMPLES];
 
 uint16_t get_samples(char* file_name);
 void get_max_energy(int32_t* return_energy, uint32_t* return_index, int16_t* input_array_re, int16_t* input_array_im, uint32_t input_len);
-float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN]);
-float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN]);
-float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN]);
-float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN]);
-void func_phi_beta(float* return_phi_, float* return_beta_, float f_c_, float alpha1_, float alpha2_, float tau_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN]);
-void find_tauandfc(float* return_tau_, float* return_f_c_, uint32_t indx, float time_step, float beta_, int16_t cut_sig_re[CHIRP_LEN], int16_t cut_sig_im[CHIRP_LEN]);
+float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im);
+float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im);
+float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im);
+float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im);
+void func_phi_beta(float* return_phi_, float* return_beta_, float f_c_, float alpha1_, float alpha2_, float tau_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im);
+void find_tauandfc(float* return_tau_, float* return_f_c_, uint32_t indx, float time_step, float beta_, int16_t* cut_sig_re, int16_t* cut_sig_im);
 
 void estimate
 (
@@ -45,8 +43,8 @@ void estimate
   float alpha1_,
   float alpha2_,
   float time_step,
-  int16_t sig_re[CHIRP_LEN],
-  int16_t sig_im[CHIRP_LEN]
+  int16_t* sig_re,
+  int16_t* sig_im
 );
 
 int main (int argc, char *argv[])
@@ -66,12 +64,12 @@ int main (int argc, char *argv[])
   const float fs = 100000000; // 100MHz (change this value?)
   const float time_step = 1.0/fs;
 
-  float beta = 0.85;
-  float alpha1 = 25e11;
-  float alpha2 = 15e11;
-  float tau = 2e-5;
-  float f_c = 5e6;
-  float phi = M_PI/2.0;
+  //float beta = 0.85;
+  //float alpha1 = 25e11;
+  //float alpha2 = 15e11;
+  //float tau = 2e-5;
+  //float f_c = 5e6;
+  //float phi = M_PI/2.0;
 
   float beta_;
   float alpha1_;
@@ -88,9 +86,6 @@ int main (int argc, char *argv[])
 
   for(i = 0 ; i < MAX_SAMPLES ; i++)
   {
-    received_samples_orig_re[i] = received_samples_re[i];
-    received_samples_orig_im[i] = received_samples_im[i];
-
     estimate_sig_re[i] = 0;
     estimate_sig_im[i] = 0;
   }
@@ -124,7 +119,8 @@ int main (int argc, char *argv[])
       cut_sig_im[i] = received_samples_im[j];
       i++;
     }
-    estimate(&chirplet_param, tau_, f_c_, max_index - start_index, alpha1_, alpha2_, time_step, cut_sig_re, cut_sig_im);
+    //estimate(&chirplet_param, tau_, f_c_, max_index - start_index, alpha1_, alpha2_, time_step, cut_sig_re, cut_sig_im);
+    estimate(&chirplet_param, max_index - start_index, tau_, f_c_, alpha1_, alpha2_, time_step, cut_sig_re, cut_sig_im);
     signal_creation(estimate_chirp_re, estimate_chirp_im, &chirplet_param);
 
     i = 0;
@@ -205,7 +201,7 @@ uint16_t get_samples(char* file_name)
   return file_len;
 }
 
-void get_max_energy(int32_t* return_energy, uint32_t* return_index, int16_t input_array_re[CHIRP_LEN], int16_t input_array_im[CHIRP_LEN], uint32_t input_len)
+void get_max_energy(int32_t* return_energy, uint32_t* return_index, int16_t* input_array_re, int16_t* input_array_im, uint32_t input_len)
 {
   int i;
   uint32_t input_re_squared;
@@ -228,7 +224,7 @@ void get_max_energy(int32_t* return_energy, uint32_t* return_index, int16_t inpu
   }
 }
 
-float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN])
+float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
   int i;
   uint32_t max_value = 0;
@@ -285,7 +281,7 @@ float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_,
   return f_c_;
 }
 
-float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN])
+float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
   int i;
   uint32_t max_value = 0;
@@ -340,7 +336,7 @@ float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_
   return tau_;
 }
 
-float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN])
+float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
   int i;
   uint32_t max_value = 0;
@@ -397,7 +393,7 @@ float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_
   return alpha2_;
 }
 
-float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN])
+float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
   int i;
   uint32_t max_value = 0;
@@ -454,7 +450,7 @@ float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_
   return alpha1_;
 }
 
-void func_phi_beta(float* return_phi_, float* return_beta_, float f_c_, float alpha1_, float alpha2_, float tau_, float time_step, int16_t single_sig_re[CHIRP_LEN], int16_t single_sig_im[CHIRP_LEN])
+void func_phi_beta(float* return_phi_, float* return_beta_, float f_c_, float alpha1_, float alpha2_, float tau_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
   int i;
   int16_t x_hat_re[CHIRP_LEN];
@@ -523,7 +519,7 @@ void func_phi_beta(float* return_phi_, float* return_beta_, float f_c_, float al
 
 }
 
-void find_tauandfc(float* return_tau_, float* return_f_c_, uint32_t indx, float time_step, float beta_, int16_t cut_sig_re[CHIRP_LEN], int16_t cut_sig_im[CHIRP_LEN])
+void find_tauandfc(float* return_tau_, float* return_f_c_, uint32_t indx, float time_step, float beta_, int16_t* cut_sig_re, int16_t* cut_sig_im)
 {
   int i;
   float tau_ = indx*time_step;
@@ -552,8 +548,8 @@ void estimate
   float alpha1_,
   float alpha2_,
   float time_step,
-  int16_t sig_re[CHIRP_LEN],
-  int16_t sig_im[CHIRP_LEN]
+  int16_t* sig_re,
+  int16_t* sig_im
 )
 {
 
