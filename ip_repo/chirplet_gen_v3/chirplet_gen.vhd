@@ -438,7 +438,7 @@ begin
       enable          => enable,
 
       din1            => t_minus_tau_sqr_alpha,
-      din2            => x"45000000", -- 1024 = 2^16/32
+      din2            => x"45000000", -- 2048 = 2^16/32
       din_valid       => rescale_gaussian_din_valid,
       din_ready       => rescale_gaussian_din_ready,
       din_last        => '0',
@@ -483,7 +483,7 @@ begin
 
   gaussian_index_round <=
     gaussian_index_dout_int when gaussian_index_dout(0) = '0' else
-    std_logic_vector(unsigned(gaussian_index_dout_int) + 1) when gaussian_index_dout_int /= x"FFFF" else
+    std_logic_vector(unsigned(gaussian_index_dout_int) + 1) when unsigned(gaussian_index_dout_int) /= to_unsigned((2**C_EXP_LUT_ADDRWIDTH)-1, C_EXP_LUT_ADDRWIDTH) else
     gaussian_index_dout_int;
 
   exp_lut_din_valid <= gaussian_index_dout_valid;
