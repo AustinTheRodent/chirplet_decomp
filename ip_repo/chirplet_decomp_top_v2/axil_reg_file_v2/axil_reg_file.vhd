@@ -78,6 +78,7 @@ package axil_reg_file_pkg is
     GPIO_REG : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
     XCORR_DOUT_RE32_REG : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
     XCORR_DOUT_IM32_REG : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
+    XCORR_DOUT_ENERGY_REG : std_logic_vector(C_REG_FILE_DATA_WIDTH-1 downto 0);
     CONTROL : CONTROL_subreg_t;
     CHIRP_GEN_NUM_SAMPS_OUT : CHIRP_GEN_NUM_SAMPS_OUT_subreg_t;
     DIN_TAU : DIN_TAU_subreg_t;
@@ -110,6 +111,7 @@ package axil_reg_file_pkg is
     GPIO_REG_wr_pulse : std_logic;
     XCORR_DOUT_RE32_REG_wr_pulse : std_logic;
     XCORR_DOUT_IM32_REG_wr_pulse : std_logic;
+    XCORR_DOUT_ENERGY_REG_wr_pulse : std_logic;
     CONTROL_REG_rd_pulse : std_logic;
     STATUS_REG_rd_pulse : std_logic;
     CHIRP_GEN_NUM_SAMPS_OUT_REG_rd_pulse : std_logic;
@@ -130,6 +132,7 @@ package axil_reg_file_pkg is
     GPIO_REG_rd_pulse : std_logic;
     XCORR_DOUT_RE32_REG_rd_pulse : std_logic;
     XCORR_DOUT_IM32_REG_rd_pulse : std_logic;
+    XCORR_DOUT_ENERGY_REG_rd_pulse : std_logic;
   end record;
 
   type transaction_state_t is (get_addr, load_reg, write_reg, read_reg);
@@ -175,6 +178,9 @@ entity axil_reg_file is
 
     s_XCORR_DOUT_IM32_XCORR_DOUT_IM32 : in std_logic_vector(31 downto 0);
     s_XCORR_DOUT_IM32_XCORR_DOUT_IM32_v : in std_logic;
+
+    s_XCORR_DOUT_ENERGY_XCORR_DOUT_ENERGY : in std_logic_vector(31 downto 0);
+    s_XCORR_DOUT_ENERGY_XCORR_DOUT_ENERGY_v : in std_logic;
 
 
     s_axi_awaddr  : in  std_logic_vector(C_REG_FILE_ADDR_WIDTH-1 downto 0);
@@ -225,6 +231,7 @@ architecture rtl of axil_reg_file is
   constant GPIO_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 68;
   constant XCORR_DOUT_RE32_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 72;
   constant XCORR_DOUT_IM32_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 76;
+  constant XCORR_DOUT_ENERGY_addr : integer range 0 to 2**C_REG_FILE_ADDR_WIDTH-1 := 80;
 
   signal registers          : reg_t;
 
@@ -277,6 +284,7 @@ begin
         registers.CHIRPLET_FEEDBACK_REG <= x"00000000";
         registers.XCORR_DOUT_RE32_REG <= x"00000000";
         registers.XCORR_DOUT_IM32_REG <= x"00000000";
+        registers.XCORR_DOUT_ENERGY_REG <= x"00000000";
       else
         if s_STATUS_CHIRP_GEN_READY_v = '1' then 
           registers.STATUS_REG(0 downto 0) <= s_STATUS_CHIRP_GEN_READY;
@@ -304,6 +312,9 @@ begin
         end if;
         if s_XCORR_DOUT_IM32_XCORR_DOUT_IM32_v = '1' then 
           registers.XCORR_DOUT_IM32_REG(31 downto 0) <= s_XCORR_DOUT_IM32_XCORR_DOUT_IM32;
+        end if;
+        if s_XCORR_DOUT_ENERGY_XCORR_DOUT_ENERGY_v = '1' then 
+          registers.XCORR_DOUT_ENERGY_REG(31 downto 0) <= s_XCORR_DOUT_ENERGY_XCORR_DOUT_ENERGY;
         end if;
       end if;
     end if;
@@ -346,6 +357,7 @@ begin
         registers.GPIO_REG_wr_pulse <= '0';
         registers.XCORR_DOUT_RE32_REG_wr_pulse <= '0';
         registers.XCORR_DOUT_IM32_REG_wr_pulse <= '0';
+        registers.XCORR_DOUT_ENERGY_REG_wr_pulse <= '0';
         s_axi_awready_int <= '0';
         s_axi_wready_int  <= '0';
         wr_state          <= init;
@@ -372,6 +384,7 @@ begin
             registers.GPIO_REG_wr_pulse <= '0';
             registers.XCORR_DOUT_RE32_REG_wr_pulse <= '0';
             registers.XCORR_DOUT_IM32_REG_wr_pulse <= '0';
+            registers.XCORR_DOUT_ENERGY_REG_wr_pulse <= '0';
             s_axi_awready_int <= '1';
             s_axi_wready_int  <= '0';
             awaddr            <= (others => '0');
@@ -398,6 +411,7 @@ begin
             registers.GPIO_REG_wr_pulse <= '0';
             registers.XCORR_DOUT_RE32_REG_wr_pulse <= '0';
             registers.XCORR_DOUT_IM32_REG_wr_pulse <= '0';
+            registers.XCORR_DOUT_ENERGY_REG_wr_pulse <= '0';
             if s_axi_awvalid = '1' and s_axi_awready_int = '1' then
               s_axi_awready_int <= '0';
               s_axi_wready_int  <= '1';
@@ -493,6 +507,7 @@ begin
         registers.GPIO_REG_rd_pulse <= '0';
         registers.XCORR_DOUT_RE32_REG_rd_pulse <= '0';
         registers.XCORR_DOUT_IM32_REG_rd_pulse <= '0';
+        registers.XCORR_DOUT_ENERGY_REG_rd_pulse <= '0';
         s_axi_arready_int <= '0';
         s_axi_rvalid_int  <= '0';
         rd_state          <= init;
@@ -519,6 +534,7 @@ begin
             registers.GPIO_REG_rd_pulse <= '0';
             registers.XCORR_DOUT_RE32_REG_rd_pulse <= '0';
             registers.XCORR_DOUT_IM32_REG_rd_pulse <= '0';
+            registers.XCORR_DOUT_ENERGY_REG_rd_pulse <= '0';
             s_axi_arready_int <= '1';
             s_axi_rvalid_int  <= '0';
             araddr            <= (others => '0');
@@ -545,6 +561,7 @@ begin
             registers.GPIO_REG_rd_pulse <= '0';
             registers.XCORR_DOUT_RE32_REG_rd_pulse <= '0';
             registers.XCORR_DOUT_IM32_REG_rd_pulse <= '0';
+            registers.XCORR_DOUT_ENERGY_REG_rd_pulse <= '0';
             if s_axi_arvalid = '1' and s_axi_arready_int = '1' then
               s_axi_arready_int <= '0';
               s_axi_rvalid_int  <= '0';
@@ -594,6 +611,8 @@ begin
                 s_axi_rdata <= registers.XCORR_DOUT_RE32_REG;
               when std_logic_vector(to_unsigned(XCORR_DOUT_IM32_addr, C_REG_FILE_ADDR_WIDTH)) =>
                 s_axi_rdata <= registers.XCORR_DOUT_IM32_REG;
+              when std_logic_vector(to_unsigned(XCORR_DOUT_ENERGY_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                s_axi_rdata <= registers.XCORR_DOUT_ENERGY_REG;
               when others =>
                 null;
             end case;
@@ -640,6 +659,8 @@ begin
                   registers.XCORR_DOUT_RE32_REG_rd_pulse <= '1';
                 when std_logic_vector(to_unsigned(XCORR_DOUT_IM32_addr, C_REG_FILE_ADDR_WIDTH)) =>
                   registers.XCORR_DOUT_IM32_REG_rd_pulse <= '1';
+                when std_logic_vector(to_unsigned(XCORR_DOUT_ENERGY_addr, C_REG_FILE_ADDR_WIDTH)) =>
+                  registers.XCORR_DOUT_ENERGY_REG_rd_pulse <= '1';
                 when others =>
                   null;
               end case;
