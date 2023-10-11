@@ -56,91 +56,84 @@ end entity;
 
 architecture rtl of chirplet_decomp_top is
 
-  constant C_FP_DWIDTH                : integer := 32; -- floating point data width
-  constant C_SAMPLE_DWIDTH            : integer := 32; -- [bits], real + imaginary component
-  constant C_NUM_PARALLEL_GENERATORS  : integer := 8;
-  constant C_CHIRP2_XCORR_RATIO       : integer := 8;
+  constant C_FP_DWIDTH                        : integer := 32; -- floating point data width
+  constant C_SAMPLE_DWIDTH                    : integer := 32; -- [bits], real + imaginary component
+  constant C_NUM_PARALLEL_GENERATORS          : integer := 8;
 
-  signal reset                        : std_logic;
-  signal enable                       : std_logic;
-  signal registers                    : reg_t;
+  signal reset                                : std_logic;
+  signal enable                               : std_logic;
+  signal registers                            : reg_t;
 
+  signal chirp_gen_fifo_din_tau               : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_alpha1            : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_f_c               : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_alpha2            : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_phi               : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din_beta              : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_din                   : std_logic_vector(C_FP_DWIDTH*6-1 downto 0);
+  signal chirp_gen_fifo_din_valid             : std_logic;
+  signal chirp_gen_fifo_din_ready             : std_logic;
+  signal chirp_gen_fifo_dout_tau              : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_alpha1           : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_f_c              : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_alpha2           : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_phi              : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout_beta             : std_logic_vector(C_FP_DWIDTH-1 downto 0);
+  signal chirp_gen_fifo_dout                  : std_logic_vector(C_FP_DWIDTH*6-1 downto 0);
+  signal chirp_gen_fifo_dout_valid            : std_logic;
+  signal chirp_gen_fifo_dout_ready            : std_logic;
 
-  signal chirp_gen_fifo_din_tau       : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_din_alpha1    : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_din_f_c       : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_din_alpha2    : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_din_phi       : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_din_beta      : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_din           : std_logic_vector(C_FP_DWIDTH*6-1 downto 0);
-  signal chirp_gen_fifo_din_valid     : std_logic;
-  signal chirp_gen_fifo_din_ready     : std_logic;
-  signal chirp_gen_fifo_dout_tau      : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_dout_alpha1   : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_dout_f_c      : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_dout_alpha2   : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_dout_phi      : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_dout_beta     : std_logic_vector(C_FP_DWIDTH-1 downto 0);
-  signal chirp_gen_fifo_dout          : std_logic_vector(C_FP_DWIDTH*6-1 downto 0);
-  signal chirp_gen_fifo_dout_valid    : std_logic;
-  signal chirp_gen_fifo_dout_ready    : std_logic;
+  signal chirp_gen_num_samps_out              : std_logic_vector(15 downto 0);
+  signal chirp_gen_din_valid                  : std_logic;
+  signal chirp_gen_din_ready                  : std_logic;
+  signal chirp_gen_dout                       : std_logic_vector(C_SAMPLE_DWIDTH*C_NUM_PARALLEL_GENERATORS-1 downto 0);
+  signal chirp_gen_dout_valid                 : std_logic;
+  signal chirp_gen_dout_ready                 : std_logic;
+  signal chirp_gen_dout_last                  : std_logic;
 
-  signal chirp_gen_num_samps_out      : std_logic_vector(15 downto 0);
-  signal chirp_gen_din_valid          : std_logic;
-  signal chirp_gen_din_ready          : std_logic;
-  signal chirp_gen_dout               : std_logic_vector(C_SAMPLE_DWIDTH*C_NUM_PARALLEL_GENERATORS-1 downto 0);
-  signal chirp_gen_dout_valid         : std_logic;
-  signal chirp_gen_dout_ready         : std_logic;
-  signal chirp_gen_dout_last          : std_logic;
+  signal ps2xcorr_dout                        : std_logic_vector((C_SAMPLE_DWIDTH)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
+  signal ps2xcorr_dout_valid                  : std_logic;
 
-  --signal chrp2xcorr_din               : std_logic_vector(chirp_gen_dout'range);
-  --signal chrp2xcorr_din_valid         : std_logic;
-  --signal chrp2xcorr_din_ready         : std_logic;
-  --signal chrp2xcorr_din_last          : std_logic;
-  --signal chrp2xcorr_dout              : std_logic_vector(C_SAMPLE_DWIDTH*C_NUM_PARALLEL_GENERATORS*C_CHIRP2_XCORR_RATIO-1 downto 0);
-  --signal chrp2xcorr_dout_valid        : std_logic;
-  --signal chrp2xcorr_dout_ready        : std_logic;
-  --signal chrp2xcorr_dout_last         : std_logic;
+  signal xcorr_din_real                       : std_logic_vector((C_SAMPLE_DWIDTH/2)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
+  signal xcorr_din_imag                       : std_logic_vector((C_SAMPLE_DWIDTH/2)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
+  signal xcorr_din_valid                      : std_logic;
+  signal xcorr_din_ready                      : std_logic;
+  signal xcorr_din_last                       : std_logic;
+  signal xcorr_dout                           : std_logic_vector(95 downto 0);
+  --signal xcorr_dout_dt                        : std_logic_vector(95 downto 0);
+  signal xcorr_dout_valid                     : std_logic;
+  signal xcorr_dout_ready                     : std_logic;
+  signal xcorr_dout_last                      : std_logic;
 
-  signal ps2xcorr_dout                : std_logic_vector((C_SAMPLE_DWIDTH)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
-  signal ps2xcorr_dout_valid          : std_logic;
+  signal xcorr_ref_din_real                   : std_logic_vector((C_SAMPLE_DWIDTH/2)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
+  signal xcorr_ref_din_imag                   : std_logic_vector((C_SAMPLE_DWIDTH/2)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
+  signal xcorr_ref_din_valid                  : std_logic;
 
-  signal xcorr_din_real               : std_logic_vector((C_SAMPLE_DWIDTH/2)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
-  signal xcorr_din_imag               : std_logic_vector((C_SAMPLE_DWIDTH/2)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
-  signal xcorr_din_valid              : std_logic;
-  signal xcorr_din_ready              : std_logic;
-  signal xcorr_din_last               : std_logic;
-  signal xcorr_dout                   : std_logic_vector(95 downto 0);
-  --signal xcorr_dout_dt                : std_logic_vector(95 downto 0);
-  signal xcorr_dout_valid             : std_logic;
-  signal xcorr_dout_ready             : std_logic;
-  signal xcorr_dout_last              : std_logic;
+  signal xcorr_buff_dout                      : std_logic_vector(xcorr_dout'range);
+  signal xcorr_buff_dout_valid                : std_logic;
+  signal xcorr_buff_dout_ready                : std_logic;
 
-  signal xcorr_ref_din_real           : std_logic_vector((C_SAMPLE_DWIDTH/2)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
-  signal xcorr_ref_din_imag           : std_logic_vector((C_SAMPLE_DWIDTH/2)*C_NUM_PARALLEL_GENERATORS-1 downto 0);
-  signal xcorr_ref_din_valid          : std_logic;
+  signal xcorr_dout_re_msbs                   : std_logic_vector(31 downto 0);
+  signal xcorr_dout_re_lsbs                   : std_logic_vector(31 downto 0);
+  signal xcorr_dout_im_msbs                   : std_logic_vector(31 downto 0);
+  signal xcorr_dout_im_lsbs                   : std_logic_vector(31 downto 0);
+  signal xcorr_dout_re_msbs_short             : std_logic_vector(31 downto 0);
+  signal xcorr_dout_im_msbs_short             : std_logic_vector(31 downto 0);
+  signal xcorr_dout_energy                    : std_logic_vector(64 downto 0);
+  signal xcorr_dout_energy_short              : std_logic_vector(31 downto 0);
 
-  signal xcorr_buff_dout              : std_logic_vector(xcorr_dout'range);
-  signal xcorr_buff_dout_valid        : std_logic;
-  signal xcorr_buff_dout_ready        : std_logic;
+  signal est_to_ps_din                        : std_logic_vector(chirp_gen_dout'range);
+  signal est_to_ps_din_valid                  : std_logic;
+  signal est_to_ps_din_ready                  : std_logic;
+  signal est_to_ps_din_last                   : std_logic;
+  signal est_to_ps_dout                       : std_logic_vector(31 downto 0);
+  signal est_to_ps_dout_valid                 : std_logic;
+  signal est_to_ps_dout_ready                 : std_logic;
+  signal est_to_ps_dout_last                  : std_logic;
 
-  signal xcorr_dout_re_msbs           : std_logic_vector(31 downto 0);
-  signal xcorr_dout_re_lsbs           : std_logic_vector(31 downto 0);
-  signal xcorr_dout_im_msbs           : std_logic_vector(31 downto 0);
-  signal xcorr_dout_im_lsbs           : std_logic_vector(31 downto 0);
-
-  signal est_to_ps_din               : std_logic_vector(chirp_gen_dout'range);
-  signal est_to_ps_din_valid         : std_logic;
-  signal est_to_ps_din_ready         : std_logic;
-  signal est_to_ps_din_last          : std_logic;
-  signal est_to_ps_dout              : std_logic_vector(31 downto 0);
-  signal est_to_ps_dout_valid        : std_logic;
-  signal est_to_ps_dout_ready        : std_logic;
-  signal est_to_ps_dout_last         : std_logic;
-
-  signal m_axis_estimate_chirplet_tdata_int  :std_logic_vector(31 downto 0);
-  signal m_axis_estimate_chirplet_tvalid_int : std_logic;
-  signal m_axis_estimate_chirplet_tlast_int  : std_logic;
+  signal m_axis_estimate_chirplet_tdata_int   :std_logic_vector(31 downto 0);
+  signal m_axis_estimate_chirplet_tvalid_int  : std_logic;
+  signal m_axis_estimate_chirplet_tlast_int   : std_logic;
 
 begin
 
@@ -187,6 +180,9 @@ begin
       s_XCORR_DOUT_IM32_XCORR_DOUT_IM32         => xcorr_buff_dout(xcorr_buff_dout'length/2-1 downto xcorr_buff_dout'length/2-32),
       s_XCORR_DOUT_IM32_XCORR_DOUT_IM32_v       => '1',
 
+      s_XCORR_DOUT_ENERGY_XCORR_DOUT_ENERGY     => xcorr_dout_energy_short,
+      s_XCORR_DOUT_ENERGY_XCORR_DOUT_ENERGY_v   => '1',
+
       s_CHIRPLET_FEEDBACK_CHIRPLET_FEEDBACK     => (others => '0'),
       s_CHIRPLET_FEEDBACK_CHIRPLET_FEEDBACK_v   => '1',
 
@@ -214,11 +210,6 @@ begin
 
       registers_out => registers
     );
-
-  xcorr_dout_re_msbs      <= x"0000" & xcorr_buff_dout(95 downto 80);
-  xcorr_dout_re_lsbs      <= xcorr_buff_dout(79 downto 48);
-  xcorr_dout_im_msbs      <= x"0000" & xcorr_buff_dout(47 downto 32);
-  xcorr_dout_im_lsbs      <= xcorr_buff_dout(31 downto 0);
 
   chirp_gen_fifo_din_tau    <= registers.DIN_TAU_REG;
   chirp_gen_fifo_din_alpha1 <= registers.DIN_ALPHA1_REG;
@@ -388,7 +379,7 @@ begin
     generic map
     (
       G_DWIDTH                => 16,  -- single rail, I or Q
-      G_SAMPS_PER_CLK         => 8,   -- samples processed per clock cycle
+      G_SAMPS_PER_CLK         => C_NUM_PARALLEL_GENERATORS,   -- samples processed per clock cycle
       G_MULTISAMPS_PROCESSED  => 64,  -- number of clock cycles used to fully accept data
       G_LOG2_SAMPS            => 9,
       G_BRAM_ADDRWIDTH        => 6
@@ -411,12 +402,6 @@ begin
       outvalid                => xcorr_dout_valid
 
     );
-
-  --xcorr_dout_dt <= xcorr_dout;
-
-  --g_fix_xcorr_dout : for i in 0 to 95 generate
-  --  xcorr_dout_dt(i) <= xcorr_dout(i);
-  --end generate;
 
   u_xcorr_buff : entity work.axis_sync_fifo
     generic map
@@ -443,29 +428,24 @@ begin
       dout_last       => open
     );
 
+  xcorr_buff_dout_ready <=
+    registers.XCORR_DOUT_IM_LSBS_REG_rd_pulse or
+    registers.XCORR_DOUT_IM32_REG_rd_pulse or
+    registers.XCORR_DOUT_ENERGY_REG_rd_pulse;
 
-  --u_xcorr_buff : entity work.axis_buffer
-  --  generic map
-  --  (
-  --    G_DWIDTH    => xcorr_dout'length
-  --  )
-  --  port map
-  --  (
-  --    clk         => s_axi_aclk,
-  --    reset       => reset,
-  --    enable      => enable,
-  --
-  --    din         => xcorr_dout,
-  --    din_valid   => xcorr_dout_valid,
-  --    din_ready   => open,
-  --    din_last    => '0',
-  --
-  --    dout        => xcorr_buff_dout,
-  --    dout_valid  => xcorr_buff_dout_valid,
-  --    dout_ready  => xcorr_buff_dout_ready,
-  --    dout_last   => open
-  --  );
+  xcorr_dout_re_msbs        <= x"0000" & xcorr_buff_dout(95 downto 80);
+  xcorr_dout_re_lsbs        <= xcorr_buff_dout(79 downto 48);
+  xcorr_dout_im_msbs        <= x"0000" & xcorr_buff_dout(47 downto 32);
+  xcorr_dout_im_lsbs        <= xcorr_buff_dout(31 downto 0);
 
-  xcorr_buff_dout_ready <= registers.XCORR_DOUT_IM_LSBS_REG_rd_pulse or registers.XCORR_DOUT_IM32_REG_rd_pulse;
+
+  xcorr_dout_re_msbs_short  <= xcorr_buff_dout(xcorr_buff_dout'length-1 downto xcorr_buff_dout'length-32);
+  xcorr_dout_im_msbs_short  <= xcorr_buff_dout(xcorr_buff_dout'length/2-1 downto xcorr_buff_dout'length/2-32);
+
+  xcorr_dout_energy <=
+    std_logic_vector(resize(signed(xcorr_dout_re_msbs_short)*signed(xcorr_dout_re_msbs_short), xcorr_dout_energy'length) + signed(xcorr_dout_im_msbs_short)*signed(xcorr_dout_im_msbs_short));
+
+  --xcorr_dout_energy_short <= x"FFFFFFFF" when xcorr_dout_energy(xcorr_dout_energy'left) = '1' else xcorr_dout_energy(xcorr_dout_energy_short'range);
+  xcorr_dout_energy_short <= xcorr_dout_energy(47 downto 16);
 
 end rtl;
