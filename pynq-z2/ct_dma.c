@@ -69,6 +69,14 @@ int init_ct_dma_rx(void)
   return 0;
 }
 
+int reset_ct_dma_rx(void)
+{
+  uint32_t* dma_ptr = XPAR_AXI_DMA_0_BASEADDR;
+  dma_ptr[S2MM_DMACR/BYTES_PER_32BIT] = 0b10; // reset
+  //dma_ptr[S2MM_DMACR/BYTES_PER_32BIT] = 0;
+  return 0;
+}
+
 int dma_rx(uint32_t* rx_buff, uint32_t len)
 {
   uint32_t* dma_ptr = XPAR_AXI_DMA_0_BASEADDR;

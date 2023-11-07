@@ -19,6 +19,7 @@ bool is_dma_tx_done(void);
 uint32_t get_dma_tx_status_reg(void);
 void clear_dma_tx_status_reg(void);
 int init_ct_dma_rx(void);
+int reset_ct_dma_rx(void);
 int dma_rx(uint32_t* rx_buff, uint32_t len);
 bool is_dma_rx_done(void);
 uint32_t get_dma_rx_status_reg(void);
