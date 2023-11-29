@@ -486,6 +486,7 @@ void func_phi_beta(float* return_phi_, float* return_beta_, float f_c_, float al
   chirplet_param_t estimate_params;
 
   estimate_params.beta.f    = 1.0;
+  estimate_params.phi.f     = 0.0;
   estimate_params.f_c.f     = f_c_;
   estimate_params.alpha1.f  = alpha1_;
   estimate_params.alpha2.f  = alpha2_;
