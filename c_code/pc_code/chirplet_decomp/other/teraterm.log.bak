@@ -1,0 +1,933 @@
+start_index : 0
+tau_        : 0.000000823
+f_c_        : 9025000.253300736
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 0.687735552
+beta_       : 0.647011648
+
+tau_    bytes    : 0x355D06D7
+f_c_    bytes    : 0x4B09B5E8
+alpha1_ bytes    : 0x560F8F63
+alpha2_ bytes    : 0x53BA43C0
+phi_    bytes    : 0x3F300F70
+beta_   bytes    : 0x3F25A28E
+
+
+start_index : 0
+tau_        : 0.000001018
+f_c_        : 6150000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 1.276452064
+beta_       : 0.347302400
+
+tau_    bytes    : 0x3588A27C
+f_c_    bytes    : 0x4ABBAEE0
+alpha1_ bytes    : 0x55C442FD
+alpha2_ bytes    : 0x53150300
+phi_    bytes    : 0x3FA362C8
+beta_   bytes    : 0x3EB1D19F
+
+
+start_index : 0
+tau_        : 0.000000718
+f_c_        : 7750000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 3.078851696
+beta_       : 0.039676856
+
+tau_    bytes    : 0x3540E563
+f_c_    bytes    : 0x4AEC82E0
+alpha1_ bytes    : 0x544B94CF
+alpha2_ bytes    : 0x5419AB10
+phi_    bytes    : 0x40450BE8
+beta_   bytes    : 0x3D228433
+
+
+start_index : 0
+tau_        : 0.000001087
+f_c_        : 10550000.174153728
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.076874456
+
+tau_    bytes    : 0x359202F7
+f_c_    bytes    : 0x4B20FAF0
+alpha1_ bytes    : 0x54E8A07E
+alpha2_ bytes    : 0xD43DC1C8
+phi_    bytes    : 0xC027C2A4
+beta_   bytes    : 0x3D9D705B
+
+
+start_index : 0
+tau_        : 0.000000743
+f_c_        : 12325000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.109385152
+
+tau_    bytes    : 0x35479805
+f_c_    bytes    : 0x4B3C1088
+alpha1_ bytes    : 0x56DBE122
+alpha2_ bytes    : 0xD33A43A0
+phi_    bytes    : 0xC03CDCB2
+beta_   bytes    : 0x3DE00553
+
+
+start_index : 0
+tau_        : 0.000000668
+f_c_        : 5025000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 0.360903488
+beta_       : 0.068584568
+
+tau_    bytes    : 0x35338020
+f_c_    bytes    : 0x4A9959D0
+alpha1_ bytes    : 0x5691601D
+alpha2_ bytes    : 0x5430F388
+phi_    bytes    : 0x3EB8C858
+beta_   bytes    : 0x3D8C7611
+
+
+start_index : 0
+tau_        : 0.000003548
+f_c_        : 8500000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -1.000000000
+beta_       : 0.070831496
+
+tau_    bytes    : 0x366E1B26
+f_c_    bytes    : 0x4B01B320
+alpha1_ bytes    : 0x56409FAB
+alpha2_ bytes    : 0xD0950400
+phi_    bytes    : 0xBFAADE6A
+beta_   bytes    : 0x3D91101A
+
+
+start_index : 0
+tau_        : 0.000001172
+f_c_        : 8450000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 2.699949952
+beta_       : 0.048595712
+
+tau_    bytes    : 0x359D65D7
+f_c_    bytes    : 0x4B00EFD0
+alpha1_ bytes    : 0x556FE18C
+alpha2_ bytes    : 0xD2BA43C0
+phi_    bytes    : 0x402CCBFB
+beta_   bytes    : 0x3D470C4C
+
+
+start_index : 599
+tau_        : 0.000002550
+f_c_        : 7900000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -1.000000000
+beta_       : 0.073268536
+
+tau_    bytes    : 0x362B20D6
+f_c_    bytes    : 0x4AF116C0
+alpha1_ bytes    : 0x565BE19A
+alpha2_ bytes    : 0xD39BFF20
+phi_    bytes    : 0xBFD42ED1
+beta_   bytes    : 0x3D960DD0
+
+
+start_index : 348
+tau_        : 0.000002550
+f_c_        : 8075000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.066835328
+
+tau_    bytes    : 0x362B20D6
+f_c_    bytes    : 0x4AF66DF0
+alpha1_ bytes    : 0x565BE19A
+alpha2_ bytes    : 0xD3EB28B0
+phi_    bytes    : 0xC019F55D
+beta_   bytes    : 0x3D88E0F6
+
+
+start_index : 848
+tau_        : 0.000002550
+f_c_        : 8000000.104071168
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : -1.000000000
+beta_       : 0.060212508
+
+tau_    bytes    : 0x362B20D6
+f_c_    bytes    : 0x4AF42400
+alpha1_ bytes    : 0x565BE19A
+alpha2_ bytes    : 0x50950400
+phi_    bytes    : 0xBFDC5D71
+beta_   bytes    : 0x3D76A164
+
+
+start_index : 0
+tau_        : 0.000001327
+f_c_        : 4775000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 2.907604224
+beta_       : 0.021256806
+
+tau_    bytes    : 0x35B22933
+f_c_    bytes    : 0x4A91B8B0
+alpha1_ bytes    : 0x549FF0AB
+alpha2_ bytes    : 0x5419AB10
+phi_    bytes    : 0x403A1630
+beta_   bytes    : 0x3CAE22C1
+
+
+start_index : 0
+tau_        : 0.000000718
+f_c_        : 16000000.208142336
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.021446266
+
+tau_    bytes    : 0x3540E563
+f_c_    bytes    : 0x4B742400
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0xD48421A2
+phi_    bytes    : 0xC0350B39
+beta_   bytes    : 0x3CAFB014
+
+
+start_index : 1098
+tau_        : 0.000002559
+f_c_        : 7900000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.000000000
+beta_       : 0.054508336
+
+tau_    bytes    : 0x362BCC4C
+f_c_    bytes    : 0x4AF116C0
+alpha1_ bytes    : 0x563789B1
+alpha2_ bytes    : 0xD39E5330
+phi_    bytes    : 0xBF4A3059
+beta_   bytes    : 0x3D5F4422
+
+
+start_index : 1347
+tau_        : 0.000002555
+f_c_        : 8000000.104071168
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -1.000000000
+beta_       : 0.050498504
+
+tau_    bytes    : 0x362B7691
+f_c_    bytes    : 0x4AF42400
+alpha1_ bytes    : 0x56566E04
+alpha2_ bytes    : 0xD392AEF0
+phi_    bytes    : 0xBF8D9220
+beta_   bytes    : 0x3D4ED785
+
+
+start_index : 0
+tau_        : 0.000001192
+f_c_        : 11625000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.000000000
+beta_       : 0.023266032
+
+tau_    bytes    : 0x35A013B1
+f_c_    bytes    : 0x4B316228
+alpha1_ bytes    : 0x5468A7F1
+alpha2_ bytes    : 0xD4800E8E
+phi_    bytes    : 0xBEDB44BE
+beta_   bytes    : 0x3CBE9868
+
+
+start_index : 1597
+tau_        : 0.000002559
+f_c_        : 7600000.072024064
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.000000000
+beta_       : 0.043961484
+
+tau_    bytes    : 0x362BCC4C
+f_c_    bytes    : 0x4AE7EF00
+alpha1_ bytes    : 0x5647E473
+alpha2_ bytes    : 0xD33EEBE0
+phi_    bytes    : 0xBEB9923A
+beta_   bytes    : 0x3D3410F5
+
+
+start_index : 1846
+tau_        : 0.000002559
+f_c_        : 7675000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.000000000
+beta_       : 0.041935092
+
+tau_    bytes    : 0x362BCC4C
+f_c_    bytes    : 0x4AEA38F0
+alpha1_ bytes    : 0x566899F9
+alpha2_ bytes    : 0xD33A43A0
+phi_    bytes    : 0xBE0CB458
+beta_   bytes    : 0x3D2BC422
+
+
+start_index : 0
+tau_        : 0.000001611
+f_c_        : 7000000.023953408
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 1.199283712
+beta_       : 0.028935168
+
+tau_    bytes    : 0x35D85699
+f_c_    bytes    : 0x4AD59F80
+alpha1_ bytes    : 0x556FE18C
+alpha2_ bytes    : 0xD31E5320
+phi_    bytes    : 0x3F998221
+beta_   bytes    : 0x3CED0972
+
+
+start_index : 0
+tau_        : 0.000000933
+f_c_        : 3150000.118153216
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 0.288827648
+beta_       : 0.016568305
+
+tau_    bytes    : 0x357A7F38
+f_c_    bytes    : 0x4A4042C0
+alpha1_ bytes    : 0x54CB8D5D
+alpha2_ bytes    : 0x53563440
+phi_    bytes    : 0x3E93E138
+beta_   bytes    : 0x3C87BA41
+
+
+start_index : 0
+tau_        : 0.000000374
+f_c_        : 8000000.104071168
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 2.696258560
+beta_       : 0.023255976
+
+tau_    bytes    : 0x34C8EEF2
+f_c_    bytes    : 0x4AF42400
+alpha1_ bytes    : 0x552E7681
+alpha2_ bytes    : 0x5327A360
+phi_    bytes    : 0x402C8F80
+beta_   bytes    : 0x3CBE8351
+
+
+start_index : 0
+tau_        : 0.000000688
+f_c_        : 11050000.482648064
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.011817225
+
+tau_    bytes    : 0x3538DBD4
+f_c_    bytes    : 0x4B289C10
+alpha1_ bytes    : 0x5502D9CF
+alpha2_ bytes    : 0xD4A2FB40
+phi_    bytes    : 0xC02A5044
+beta_   bytes    : 0x3C419D09
+
+
+start_index : 0
+tau_        : 0.000000608
+f_c_        : 19500000.220119040
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 3.119630096
+beta_       : 0.023251672
+
+tau_    bytes    : 0x35236D02
+f_c_    bytes    : 0x4B94C5F0
+alpha1_ bytes    : 0x583A7CC2
+alpha2_ bytes    : 0xD48675AE
+phi_    bytes    : 0x4047A805
+beta_   bytes    : 0x3CBE7A4A
+
+
+start_index : 0
+tau_        : 0.000001641
+f_c_        : 10000000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : -1.000000000
+beta_       : 0.009783103
+
+tau_    bytes    : 0x35DC5B60
+f_c_    bytes    : 0x4B189680
+alpha1_ bytes    : 0x5491671A
+alpha2_ bytes    : 0x535ADC60
+phi_    bytes    : 0xBFED03EE
+beta_   bytes    : 0x3C20494F
+
+
+start_index : 0
+tau_        : 0.000001437
+f_c_        : 4100000.060047360
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : -1.000000000
+beta_       : 0.007874266
+
+tau_    bytes    : 0x35C0E563
+f_c_    bytes    : 0x4A7A3E80
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0x53A9F760
+phi_    bytes    : 0xBFCD2EB5
+beta_   bytes    : 0x3C010311
+
+
+start_index : 0
+tau_        : 0.000000558
+f_c_        : 4000000.052035584
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 1.886988416
+beta_       : 0.013147940
+
+tau_    bytes    : 0x351607BF
+f_c_    bytes    : 0x4A742400
+alpha1_ bytes    : 0x56B78939
+alpha2_ bytes    : 0x53D18C30
+phi_    bytes    : 0x3FF188D6
+beta_   bytes    : 0x3C576A75
+
+
+start_index : 2095
+tau_        : 0.000002559
+f_c_        : 7725000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 0.244119776
+beta_       : 0.033329840
+
+tau_    bytes    : 0x362BCC4C
+f_c_    bytes    : 0x4AEBBF90
+alpha1_ bytes    : 0x56859058
+alpha2_ bytes    : 0x52150300
+phi_    bytes    : 0x3E79FA89
+beta_   bytes    : 0x3D0884DF
+
+
+start_index : 0
+tau_        : 0.000000683
+f_c_        : 14400000.079953920
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.561680896
+beta_       : 0.004330969
+
+tau_    bytes    : 0x353784E7
+f_c_    bytes    : 0x4B5BBA00
+alpha1_ bytes    : 0x542E81AE
+alpha2_ bytes    : 0xD3E1D880
+phi_    bytes    : 0x3F0FCA52
+beta_   bytes    : 0x3B8DEACE
+
+
+start_index : 0
+tau_        : 0.000000648
+f_c_        : 19000000.985366528
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 2.837899712
+beta_       : 0.004717950
+
+tau_    bytes    : 0x352E246B
+f_c_    bytes    : 0x4B90F560
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0xD4668098
+phi_    bytes    : 0x4035A026
+beta_   bytes    : 0x3B9A990A
+
+
+start_index : 628
+tau_        : 0.000002535
+f_c_        : 10000000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.019160158
+
+tau_    bytes    : 0x362A1FA4
+f_c_    bytes    : 0x4B189680
+alpha1_ bytes    : 0x565DB2CC
+alpha2_ bytes    : 0xD2DF8480
+phi_    bytes    : 0xC021046F
+beta_   bytes    : 0x3C9CF5C4
+
+
+start_index : 0
+tau_        : 0.000000638
+f_c_        : 30000000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 1.044751048
+beta_       : 0.017038448
+
+tau_    bytes    : 0x352B7691
+f_c_    bytes    : 0x4BE4E1C0
+alpha1_ bytes    : 0x581199DB
+alpha2_ bytes    : 0x5589A93D
+phi_    bytes    : 0x3F85BA67
+beta_   bytes    : 0x3C8B9437
+
+
+start_index : 2342
+tau_        : 0.000002574
+f_c_        : 7100000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.405493632
+beta_       : 0.019337182
+
+tau_    bytes    : 0x362CCD7E
+f_c_    bytes    : 0x4AD8ACC0
+alpha1_ bytes    : 0x565DB2CC
+alpha2_ bytes    : 0xD2722480
+phi_    bytes    : 0x3ECF9CDD
+beta_   bytes    : 0x3C9E6903
+
+
+start_index : 876
+tau_        : 0.000002555
+f_c_        : 10000000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.016465871
+
+tau_    bytes    : 0x362B7691
+f_c_    bytes    : 0x4B189680
+alpha1_ bytes    : 0x56B78939
+alpha2_ bytes    : 0xD4070AB0
+phi_    bytes    : 0xC00B1919
+beta_   bytes    : 0x3C86E36F
+
+
+start_index : 377
+tau_        : 0.000002525
+f_c_        : 10100000.003883008
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 2.307084576
+beta_       : 0.012504158
+
+tau_    bytes    : 0x3629742D
+f_c_    bytes    : 0x4B1A1D20
+alpha1_ bytes    : 0x561502F9
+alpha2_ bytes    : 0xD4105AE0
+phi_    bytes    : 0x4013A746
+beta_   bytes    : 0x3C4CDE3D
+
+
+start_index : 0
+tau_        : 0.000000958
+f_c_        : 6275000.167194624
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.832018240
+beta_       : 0.010563254
+
+tau_    bytes    : 0x358098ED
+f_c_    bytes    : 0x4ABF7F70
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0xD3BA43B0
+phi_    bytes    : 0x3F54FF26
+beta_   bytes    : 0x3C2D1180
+
+
+start_index : 2197
+tau_        : 0.000002555
+f_c_        : 7300000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 0.000000000
+phi_        : 0.000000000
+beta_       : 0.008448057
+
+tau_    bytes    : 0x362B7691
+f_c_    bytes    : 0x4ADEC740
+alpha1_ bytes    : 0x544B94CF
+alpha2_ bytes    : 0x00000000
+phi_    bytes    : 0xBE0A0993
+beta_   bytes    : 0x3C0A69B8
+
+
+start_index : 1947
+tau_        : 0.000002555
+f_c_        : 7175000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.000000000
+beta_       : 0.008710618
+
+tau_    bytes    : 0x362B7691
+f_c_    bytes    : 0x4ADAF6B0
+alpha1_ bytes    : 0x54BD03CC
+alpha2_ bytes    : 0xD2026280
+phi_    bytes    : 0xBF697396
+beta_   bytes    : 0x3C0EB6FB
+
+
+start_index : 0
+tau_        : 0.000000648
+f_c_        : 16025000.277254144
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -1.000000000
+beta_       : 0.004019969
+
+tau_    bytes    : 0x352E246B
+f_c_    bytes    : 0x4B7485A8
+alpha1_ bytes    : 0x561502F9
+alpha2_ bytes    : 0xD4C7A6FC
+phi_    bytes    : 0xBFB9D68E
+beta_   bytes    : 0x3B83B9F3
+
+
+start_index : 1127
+tau_        : 0.000002624
+f_c_        : 6575000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 2.296539296
+beta_       : 0.007172572
+
+tau_    bytes    : 0x363026CF
+f_c_    bytes    : 0x4AC8A730
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0x52722500
+phi_    bytes    : 0x4012FA80
+beta_   bytes    : 0x3BEB07E5
+
+
+start_index : 2590
+tau_        : 0.000002555
+f_c_        : 10075000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.000000000
+beta_       : 0.010337993
+
+tau_    bytes    : 0x362B7691
+f_c_    bytes    : 0x4B19BB78
+alpha1_ bytes    : 0x5693314F
+alpha2_ bytes    : 0xD29E5300
+phi_    bytes    : 0xBF02E6C1
+beta_   bytes    : 0x3C2960AF
+
+
+start_index : 0
+tau_        : 0.000002075
+f_c_        : 8025000.173182976
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 2.916818112
+beta_       : 0.006321659
+
+tau_    bytes    : 0x360B5056
+f_c_    bytes    : 0x4AF4E750
+alpha1_ bytes    : 0x549FF0AB
+alpha2_ bytes    : 0xD2722480
+phi_    bytes    : 0x403AAD26
+beta_   bytes    : 0x3BCF25EB
+
+
+start_index : 0
+tau_        : 0.000003867
+f_c_        : 9000000.184188928
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 1.023017644
+beta_       : 0.010550968
+
+tau_    bytes    : 0x3681C4FC
+f_c_    bytes    : 0x4B095440
+alpha1_ bytes    : 0x5693314F
+alpha2_ bytes    : 0x53975700
+phi_    bytes    : 0x3F82F23E
+beta_   bytes    : 0x3C2CDDF8
+
+
+start_index : 0
+tau_        : 0.000000239
+f_c_        : 10125000.072994816
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 0.000000000
+beta_       : 0.006116159
+
+tau_    bytes    : 0x348098ED
+f_c_    bytes    : 0x4B1A7EC8
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0x53B34790
+phi_    bytes    : 0xBF27922D
+beta_   bytes    : 0x3BC86A0F
+
+
+start_index : 1626
+tau_        : 0.000003208
+f_c_        : 6675000.199241728
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 2.352867360
+beta_       : 0.008205862
+
+tau_    bytes    : 0x36575567
+f_c_    bytes    : 0x4ACBB470
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0x52B0F380
+phi_    bytes    : 0x40169561
+beta_   bytes    : 0x3C0671E2
+
+
+start_index : 1626
+tau_        : 0.000000159
+f_c_        : 6725000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : -2.000000000
+beta_       : 0.008100174
+
+tau_    bytes    : 0x342B7691
+f_c_    bytes    : 0x4ACD3B10
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0x523A4400
+phi_    bytes    : 0xC02A2603
+beta_   bytes    : 0x3C04B698
+
+
+start_index : 1626
+tau_        : 0.000002639
+f_c_        : 7000000.023953408
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.008982766
+
+tau_    bytes    : 0x36312801
+f_c_    bytes    : 0x4AD59F80
+alpha1_ bytes    : 0x561502F9
+alpha2_ bytes    : 0xD3FDC910
+phi_    bytes    : 0xC03808AC
+beta_   bytes    : 0x3C132C74
+
+
+start_index : 2843
+tau_        : 0.000002584
+f_c_        : 9350000.078012416
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : -1.000000000
+beta_       : 0.009577692
+
+tau_    bytes    : 0x362D78F5
+f_c_    bytes    : 0x4B0EAB70
+alpha1_ bytes    : 0x561502F9
+alpha2_ bytes    : 0x53905AF0
+phi_    bytes    : 0xBFBCFACD
+beta_   bytes    : 0x3C1CEBC1
+
+
+start_index : 608
+tau_        : 0.000002684
+f_c_        : 6000000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 3.106828448
+beta_       : 0.005998024
+
+tau_    bytes    : 0x36342B96
+f_c_    bytes    : 0x4AB71B00
+alpha1_ bytes    : 0x5491671A
+alpha2_ bytes    : 0x537B7500
+phi_    bytes    : 0x4046D647
+beta_   bytes    : 0x3BC48B13
+
+
+start_index : 0
+tau_        : 0.000000798
+f_c_        : 1000000.013008896
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : -1.000000000
+beta_       : 0.002979118
+
+tau_    bytes    : 0x35565435
+f_c_    bytes    : 0x49742400
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0x53BA43C0
+phi_    bytes    : 0xBFD62D56
+beta_   bytes    : 0x3B433D51
+
+
+start_index : 3093
+tau_        : 0.000002559
+f_c_        : 9000000.184188928
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : -1.000000000
+beta_       : 0.006827886
+
+tau_    bytes    : 0x362BCC4C
+f_c_    bytes    : 0x4B095440
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0x53563440
+phi_    bytes    : 0xBFEC8888
+beta_   bytes    : 0x3BDFBC76
+
+
+start_index : 2450
+tau_        : 0.000002589
+f_c_        : 7300000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 0.000000000
+phi_        : -2.000000000
+beta_       : 0.005599416
+
+tau_    bytes    : 0x362DCEB0
+f_c_    bytes    : 0x4ADEC740
+alpha1_ bytes    : 0x53AE9095
+alpha2_ bytes    : 0x00000000
+phi_    bytes    : 0xC0115AC8
+beta_   bytes    : 0x3BB77B4E
+
+
+start_index : 0
+tau_        : 0.000001277
+f_c_        : 12575000.403501056
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.557641152
+beta_       : 0.003520931
+
+tau_    bytes    : 0x35AB7691
+f_c_    bytes    : 0x4B3FE118
+alpha1_ bytes    : 0x542E81AE
+alpha2_ bytes    : 0xD33A43A0
+phi_    bytes    : 0x3F0EC192
+beta_   bytes    : 0x3B66BF6C
+
+
+start_index : 0
+tau_        : 0.000000184
+f_c_        : 6175000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : 2147483647.4294967295
+phi_        : 0.341800128
+beta_       : 0.005031591
+
+tau_    bytes    : 0x34464118
+f_c_    bytes    : 0x4ABC7230
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0x54267950
+phi_    bytes    : 0x3EAF006D
+beta_   bytes    : 0x3BA4E00C
+
+
+start_index : 0
+tau_        : 0.000000479
+f_c_        : 12000000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : -2.000000000
+beta_       : 0.002408336
+
+tau_    bytes    : 0x350098ED
+f_c_    bytes    : 0x4B371B00
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0xD3C13FE0
+phi_    bytes    : 0xC01B3215
+beta_   bytes    : 0x3B1DD530
+
+
+start_index : 1874
+tau_        : 0.000002639
+f_c_        : 7000000.023953408
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 2.926605696
+beta_       : 0.007312913
+
+tau_    bytes    : 0x36312801
+f_c_    bytes    : 0x4AD59F80
+alpha1_ bytes    : 0x561502F9
+alpha2_ bytes    : 0xD30262A0
+phi_    bytes    : 0x403B4D82
+beta_   bytes    : 0x3BEFA12A
+
+
+start_index : 0
+tau_        : 0.000000638
+f_c_        : 45000000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.839595136
+beta_       : 0.004855114
+
+tau_    bytes    : 0x352B7691
+f_c_    bytes    : 0x4C2BA950
+alpha1_ bytes    : 0x5712487B
+alpha2_ bytes    : 0xD5870AB2
+phi_    bytes    : 0x3F56EFB5
+beta_   bytes    : 0x3B9F17A6
+
+
+start_index : 2368
+tau_        : 0.000002395
+f_c_        : 10350000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.000000000
+beta_       : 0.002922942
+
+tau_    bytes    : 0x3620BF28
+f_c_    bytes    : 0x4B1DEDB0
+alpha1_ bytes    : 0x53E8B6D8
+alpha2_ bytes    : 0xD33A43A0
+phi_    bytes    : 0xBDB9E8D8
+beta_   bytes    : 0x3B3F8ED8
+
+
+start_index : 592
+tau_        : 0.000002555
+f_c_        : 10000000.000000000
+alpha1_     : 2147483647.4294967295
+alpha2_     : -2147483648.000000000
+phi_        : 0.111848192
+beta_       : 0.004611464
+
+tau_    bytes    : 0x362B7691
+f_c_    bytes    : 0x4B189680
+alpha1_ bytes    : 0x5598A64B
+alpha2_ bytes    : 0xD322FB40
+phi_    bytes    : 0x3DE510AA
+beta_   bytes    : 0x3B971BC4
+
+
+max_value: 54925
+chirp_count: 58
+
+
+send binary file...
