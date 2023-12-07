@@ -39,10 +39,6 @@ void estimate
 (
   chirplet_param_t* return_est_params,
   uint32_t indx,
-  float tau_,
-  float f_c_,
-  float alpha1_,
-  float alpha2_,
   float time_step,
   int16_t* sig_re,
   int16_t* sig_im
@@ -96,9 +92,19 @@ int main (int argc, char *argv[])
   clock_t t;
   t = clock();
 
+  //float total_energy;
+
   for(chirp_count = 0 ; chirp_count < max_chirp_count ; chirp_count++)
   {
     get_max_energy(&max_value, &max_index, received_samples_re, received_samples_im, input_len);
+
+    //total_energy = 0;
+    //for(i = 0 ; i < input_len ; i++)
+    //{
+    //  total_energy = total_energy + received_samples_re[i]*received_samples_re[i] + received_samples_im[i]*received_samples_im[i];
+    //}
+    //printf("total_energy: %f\n", total_energy);
+
     //if(max_value < 55000)
     //{
     //  break;
@@ -124,8 +130,7 @@ int main (int argc, char *argv[])
       cut_sig_im[i] = received_samples_im[j];
       i++;
     }
-    //estimate(&chirplet_param, tau_, f_c_, max_index - start_index, alpha1_, alpha2_, time_step, cut_sig_re, cut_sig_im);
-    estimate(&chirplet_param, max_index - start_index, tau_, f_c_, alpha1_, alpha2_, time_step, cut_sig_re, cut_sig_im);
+    estimate(&chirplet_param, max_index - start_index, time_step, cut_sig_re, cut_sig_im);
     signal_creation(estimate_chirp_re, estimate_chirp_im, &chirplet_param);
 
     i = 0;
@@ -144,9 +149,9 @@ int main (int argc, char *argv[])
     //printf("alpha1_ : %0.16f\n" , chirplet_param.alpha1.f    );
     //printf("alpha2_ : %0.16f\n" , chirplet_param.alpha2.f );
     //printf("phi_    : %0.16f\n" , chirplet_param.phi.f    );
-    printf("beta_   : %0.16f\n" , chirplet_param.beta.f   );
+    //printf("beta_   : %0.16f\n" , chirplet_param.beta.f   );
 
-    if(chirplet_param.beta.f < 0.001)
+    if(chirplet_param.beta.f < 0.0005)
     {
       break;
     }
@@ -249,15 +254,16 @@ void get_max_energy(int32_t* return_energy, uint32_t* return_index, int16_t* inp
 float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
   int i;
-  float max_value = 0;
-  const int16_t steps = 50;
-  const int16_t nestedsteps = 40;
-  float f_c_;
-  float CT1;
+  const int num_steps = 11; // 2048 divisions
+
+  float CT[3];
   chirplet_param_t params;
 
-  const float fmin = C_FMIN;
-  const float fmax = C_FMAX;
+  const float param_min  = C_FMIN;
+  const float param_max  = C_FMAX;
+  const float del_gamma = param_max - param_min;
+  float param_current[3] = {0, (param_max + param_min)/2.0, 0};
+  float divisor = 4;
 
   params.t_step.f = time_step;
   params.beta.f   = beta_;
@@ -267,54 +273,50 @@ float func_fc(float beta_, float tau_, float alpha1_, float alpha2_, float phi_,
   params.phi.f    = phi_;
   params.alpha2.f = alpha2_;
 
-  int16_t indx = 0;
-  int16_t oldindx = 0;
-  for(i = 0 ; i <= steps ; i++)
+  params.f_c.f = param_current[1];
+  CT[1] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+  
+  for(i = 0 ; i < num_steps ; i++)
   {
-    params.f_c.f = fmin + (float)i*((fmax-fmin)/((float)steps));
-    CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+    //printf("param_current[1]: %f\n", param_current[1]);
+    param_current[0] = param_current[1] - del_gamma/divisor;
+    param_current[2] = param_current[1] + del_gamma/divisor;
 
-    if(CT1 > max_value)
+    params.f_c.f = param_current[0];
+    CT[0] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+    params.f_c.f = param_current[2];
+    CT[2] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+
+    if((CT[0] > CT[1]) && (CT[0] > CT[2]))
     {
-      max_value = CT1;
-      indx = i*nestedsteps;
+      param_current[1] = param_current[0];
+      CT[1] = CT[0];
     }
-  }
-
-  oldindx = indx;
-  if(oldindx < nestedsteps)
-  {
-    oldindx = nestedsteps;
-    indx = nestedsteps;
-  }
-  for(i = oldindx-nestedsteps ; i <= oldindx+nestedsteps ; i++)
-  {
-    params.f_c.f = fmin + (float)i*((fmax-fmin)/(float)(nestedsteps*steps));
-    CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
-
-    if(CT1 > max_value)
+    else if((CT[2] > CT[1]) && (CT[2] > CT[0]))
     {
-      max_value = CT1;
-      indx = i;
+      param_current[1] = param_current[2];
+      CT[1] = CT[2];
     }
+    divisor = divisor*2;
   }
 
-  f_c_ = fmin + (float)indx*((fmax-fmin)/(float)(nestedsteps*steps));
-  //printf("indx: %u\n", indx);
-  //printf("f_c_: %f\n", f_c_);
-  return f_c_;
+  return param_current[1];
 }
 
 float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
+
   int i;
-  float max_value = 0;
-  const int16_t steps = 32;
-  const int16_t nestedsteps = 32;
-  float tau_;
-  const float tau_max = time_step*((float)CHIRP_LEN-1.0);
-  float CT1;
+  const int num_steps = 11; // 2048 divisions
+
+  float CT[3];
   chirplet_param_t params;
+
+  const float param_min  = 0;
+  const float param_max  = time_step*((float)CHIRP_LEN-1.0);
+  const float del_gamma = param_max - param_min;
+  float param_current[3] = {0, (param_max + param_min)/2.0, 0};
+  float divisor = 4;
 
   params.t_step.f = time_step;
   params.beta.f   = beta_;
@@ -324,54 +326,51 @@ float func_tau(float beta_, float f_c_, float alpha1_, float alpha2_, float phi_
   params.phi.f    = phi_;
   params.alpha2.f = alpha2_;
 
-  int16_t indx = 0;
-  int16_t oldindx = 0;
-  for(i = 0 ; i <= steps ; i++)
+  params.tau.f = param_current[1];
+  CT[1] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+  
+  for(i = 0 ; i < num_steps ; i++)
   {
-    params.tau.f = (float)i*((tau_max)/steps);
-    CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+    //printf("param_current[1]: %f\n", param_current[1]);
+    param_current[0] = param_current[1] - del_gamma/divisor;
+    param_current[2] = param_current[1] + del_gamma/divisor;
 
-    if(CT1 > max_value)
+    params.tau.f = param_current[0];
+    CT[0] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+    params.tau.f = param_current[2];
+    CT[2] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+
+    if((CT[0] > CT[1]) && (CT[0] > CT[2]))
     {
-      max_value = CT1;
-      indx = i*nestedsteps;
+      param_current[1] = param_current[0];
+      CT[1] = CT[0];
     }
-  }
-
-  oldindx = indx;
-  if(oldindx < nestedsteps)
-  {
-    oldindx = nestedsteps;
-    indx = nestedsteps;
-  }
-  for(i = oldindx-nestedsteps ; i <= oldindx+nestedsteps ; i++)
-  {
-    params.tau.f = i*((tau_max)/(float)(nestedsteps*steps));
-    CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
-
-    if(CT1 > max_value)
+    else if((CT[2] > CT[1]) && (CT[2] > CT[0]))
     {
-      max_value = CT1;
-      indx = i;
+      param_current[1] = param_current[2];
+      CT[1] = CT[2];
     }
+    divisor = divisor*2;
   }
 
-  tau_ = (float)indx*((tau_max)/(float)(nestedsteps*steps));
-  return tau_;
+  return param_current[1];
+
+
 }
 
 float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
   int i;
-  float max_value = 0;
-  const int16_t steps = 50;
-  const int16_t nestedsteps = 40;
-  float alpha2_;
-  float CT1;
+  const int num_steps = 11; // 2048 divisions
+
+  float CT[3];
   chirplet_param_t params;
 
-  const float a2min = C_A2MIN;
-  const float a2max = C_A2MAX;
+  const float param_min  = C_A2MIN;
+  const float param_max  = C_A2MAX;
+  const float del_gamma = param_max - param_min;
+  float param_current[3] = {0, (param_max + param_min)/2.0, 0};
+  float divisor = 4;
 
   params.t_step.f = time_step;
   params.beta.f   = beta_;
@@ -381,54 +380,50 @@ float func_alpha2(float beta_, float f_c_, float alpha1_, float tau_, float phi_
   params.phi.f    = phi_;
   //params.alpha2.f = alpha2_;
 
-  int16_t indx = 0;
-  int16_t oldindx = 0;
-  for(i = 0 ; i <= steps ; i++)
+  params.alpha2.f = param_current[1];
+  CT[1] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+  
+  for(i = 0 ; i < num_steps ; i++)
   {
-    params.alpha2.f = a2min + (float)i*((a2max-a2min)/((float)steps));
-    CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
-    if(CT1 > max_value)
+    //printf("param_current[1]: %f\n", param_current[1]);
+    param_current[0] = param_current[1] - del_gamma/divisor;
+    param_current[2] = param_current[1] + del_gamma/divisor;
+
+    params.alpha2.f = param_current[0];
+    CT[0] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+    params.alpha2.f = param_current[2];
+    CT[2] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+
+    if((CT[0] > CT[1]) && (CT[0] > CT[2]))
     {
-      max_value = CT1;
-      indx = i*nestedsteps;
+      param_current[1] = param_current[0];
+      CT[1] = CT[0];
     }
-  }
-
-  oldindx = indx;
-  if(oldindx < nestedsteps)
-  {
-    oldindx = nestedsteps;
-    indx = nestedsteps;
-  }
-  for(i = oldindx-nestedsteps ; i <= oldindx+nestedsteps ; i++)
-  {
-    params.alpha2.f = a2min + (float)i*((a2max-a2min)/(float)(nestedsteps*steps));
-    CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
-
-    if(CT1 > max_value)
+    else if((CT[2] > CT[1]) && (CT[2] > CT[0]))
     {
-      max_value = CT1;
-      indx = i;
+      param_current[1] = param_current[2];
+      CT[1] = CT[2];
     }
+    divisor = divisor*2;
   }
 
-  alpha2_ = a2min + (float)indx*((a2max-a2min)/(float)(nestedsteps*steps));
-  return alpha2_;
+  return param_current[1];
+
 }
 
 float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
 {
   int i;
-  float max_value = 0;
-  const int16_t steps = 50;
-  const int16_t nestedsteps = 40;
-  float alpha1_;
-  float CT1;
-  float beta_alpha1;
+  const int num_steps = 11; // 2048 divisions
+
+  float CT[3];
   chirplet_param_t params;
 
-  const float a1min = C_A1MIN;
-  const float a1max = C_A1MAX;
+  const float param_min  = C_A1MIN;
+  const float param_max  = C_A1MAX;
+  const float del_gamma = param_max - param_min;
+  float param_current[3] = {0, (param_max + param_min)/2.0, 0};
+  float divisor = 4;
 
   params.t_step.f = time_step;
   //params.beta.f   = beta_;
@@ -438,39 +433,37 @@ float func_alpha1(float f_c_, float tau_, float alpha2_, float phi_, float time_
   params.phi.f    = phi_;
   params.alpha2.f = alpha2_;
 
-  int16_t indx = 0;
-  int16_t oldindx = 0;
-  for(i = 0 ; i <= steps ; i++)
+  params.alpha1.f = param_current[1];
+  params.beta.f = 4e-4 * pow(2.0*M_PI*params.alpha1.f, 0.25);
+  CT[1] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+  
+  for(i = 0 ; i < num_steps ; i++)
   {
-    params.alpha1.f = a1min + (float)i*((a1max-a1min)/((float)steps));
+    //printf("param_current[1]: %f\n", param_current[1]);
+    param_current[0] = param_current[1] - del_gamma/divisor;
+    param_current[2] = param_current[1] + del_gamma/divisor;
+
+    params.alpha1.f = param_current[0];
     params.beta.f = 4e-4 * pow(2.0*M_PI*params.alpha1.f, 0.25);
-    CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
-    if(CT1 > max_value)
+    CT[0] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+    params.alpha1.f = param_current[2];
+    params.beta.f = 4e-4 * pow(2.0*M_PI*params.alpha1.f, 0.25);
+    CT[2] = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
+
+    if((CT[0] > CT[1]) && (CT[0] > CT[2]))
     {
-      max_value = CT1;
-      indx = i*nestedsteps;
+      param_current[1] = param_current[0];
+      CT[1] = CT[0];
     }
+    else if((CT[2] > CT[1]) && (CT[2] > CT[0]))
+    {
+      param_current[1] = param_current[2];
+      CT[1] = CT[2];
+    }
+    divisor = divisor*2;
   }
 
-  oldindx = indx;
-  if(oldindx < nestedsteps)
-  {
-    oldindx = nestedsteps;
-    indx = nestedsteps;
-  }
-  for(i = oldindx-nestedsteps ; i <= oldindx+nestedsteps ; i++)
-  {
-    params.alpha1.f = a1min + (float)i*((a1max-a1min)/(float)(nestedsteps*steps));
-    params.beta.f = 4e-4 * pow(2.0*M_PI*params.alpha1.f, 0.25);
-    CT1 = chirplet_transform_energy(&params, single_sig_re, single_sig_im);
-    if(CT1 > max_value)
-    {
-      max_value = CT1;
-      indx = i;
-    }
-  }
-  alpha1_ = a1min + (float)indx*((a1max-a1min)/(float)(nestedsteps*steps));
-  return alpha1_;
+  return param_current[1];
 }
 
 void func_phi_beta(float* return_phi_, float* return_beta_, float f_c_, float alpha1_, float alpha2_, float tau_, float time_step, int16_t* single_sig_re, int16_t* single_sig_im)
@@ -566,17 +559,13 @@ void estimate
 (
   chirplet_param_t* return_est_params,
   uint32_t indx,
-  float tau_,
-  float f_c_,
-  float alpha1_,
-  float alpha2_,
   float time_step,
   int16_t* sig_re,
   int16_t* sig_im
 )
 {
 
-  float phi_, beta_;
+  float phi_, beta_, tau_, f_c_, alpha1_, alpha2_;
 
   beta_ = 0.5;
   find_tauandfc(&tau_, &f_c_, indx, time_step, beta_, sig_re, sig_im);
